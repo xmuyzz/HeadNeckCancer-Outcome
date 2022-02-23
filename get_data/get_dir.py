@@ -20,24 +20,30 @@ import os
 import glob
 import pandas as pd
 import SimpleITK as sitk
+import pickle
 
 
 
-
-
-def get_dir(data_dir, tumor_type):
+def get_dir(data_dir, proj_dir, tumor_type):
 
 
     """
     save np arr for masked img for CT scans
     
-    @ params:
-      tumor_type         - required: tumor + node or tumor
-      data_dir  - required: tumor+node label dir CHUM cohort
-      arr_dir  - required: tumor+node label dir CHUS cohort
+    Args:
+      tumor_type {str} -- tumor + node or tumor;
+      data_dir {path} -- data directory;
+      proj_dir {path} -- project directory;
+
+    Returns:
+        data paths for images and segmentations;
+
+    Raise errors:
+        None;
+
     """
 
-
+    pro_data_dir = os.path.join(proj_dir, 'pro_data')
     CHUM_img_dir = os.path.join(data_dir, 'CHUM_files/image_reg')
     CHUS_img_dir = os.path.join(data_dir, 'CHUS_files/image_reg')
     PMH_img_dir = os.path.join(data_dir, 'PMH_files/image_reg')
@@ -51,8 +57,8 @@ def get_dir(data_dir, tumor_type):
     PMH_seg_p_dir = os.path.join(data_dir, 'PMH_files/label_p_reg')
     MDACC_seg_p_dir = os.path.join(data_dir, 'MDACC_files/label_p_reg')
     
-    # get dirs for all img and seg
-    #------------------------------
+    """get dirs for all img and seg
+    """
     dirs = [
         CHUM_img_dir, CHUS_img_dir, PMH_img_dir, MDACC_img_dir,
         CHUM_seg_pn_dir, CHUS_seg_pn_dir, PMH_seg_pn_dir, MDACC_seg_pn_dir,
@@ -81,8 +87,8 @@ def get_dir(data_dir, tumor_type):
     print('len pn:', len(list_pn_dir))
     print('len p:', len(list_p_dir))
     
-    # get missing segs for pn and p
-    #----------------------------------
+    """get missing segs for pn and p
+    """
     fnss = []
     for list_dir in [list_img_dir, list_pn_dir, list_p_dir]:
         fns = []
@@ -98,8 +104,8 @@ def get_dir(data_dir, tumor_type):
     print('missing pn:', len(missing_pn))
     print('missing p:', len(missing_p))
 
-    # get empty seg
-    #----------------
+    """get empty seg
+    """
     print('empty seg:')
     run_empty_seg = False
     if run_empty_seg:
@@ -163,6 +169,14 @@ def get_dir(data_dir, tumor_type):
     seg_pn_dirss = seg_pn_dirss_
     print(len(img_dirss[1]))
     print(len(seg_pn_dirss[1]))
+
+    # save lists of dirs to pickle
+    for dirss, fn in zip([img_dirss, seg_pn_dirss], 
+                         ['img_dirss.pkl', 'seg_pn_dirss.pkl']):
+        fn = os.path.join(pro_data_dir, fn)
+        with open(fn, 'wb') as f:
+            pickle.dump(dirss, f)
     print('successfully save all data dir!')
     
+
     return img_dirss, seg_pn_dirss, exclude_pn, exclude_p

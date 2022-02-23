@@ -21,11 +21,6 @@ from pycox.models import LogisticHazard
 from pycox.models import DeepHitSingle
 from pycox.utils import kaplan_meier
 
-#from models import ResNet
-from go_models.data_loader import DataLoader
-#from go_models.generate_model import generate_model
-#from go_models.opt import opt
-from models.cnn import cnn3d
 
 
 
@@ -35,10 +30,15 @@ def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
     """
     get cox model
 
-    @params:
-      tumor_type - required: tumor + node or tumor
-      data_dir - required: tumor + node label dir CHUM cohort
-      arr_dir - required: tumor + node label dir CHUS cohort
+    Args:
+        proj_dir {path} -- project folder;
+        cnn_model {model} -- cnn model;
+        _cox_model {str} -- cox model name;
+        lr {float} -- learning rate;
+    
+    Returns:
+        cox model;
+
     """
 
 

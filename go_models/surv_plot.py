@@ -24,13 +24,13 @@ from pycox.utils import kaplan_meier
 
 
 
-def surv_plot(lab_drive_dir, x, y, fn):
+def surv_plot(out_dir, x, y, fn):
 
     """
     plot survival curves
     """
 
-    output_dir = os.path.join(lab_drive_dir, 'output')
+    output_dir = os.path.join(out_dir, 'output')
     if not os.path.exists(output_dir): os.mkdir(output_dir)
 
     fig = plt.figure()
@@ -47,7 +47,7 @@ def surv_plot(lab_drive_dir, x, y, fn):
     ax.axhline(y=1, color='k', linewidth=2)
     ax.axvline(x=0, color='k', linewidth=2)
     ax.axvline(x=5000, color='k', linewidth=2)
-    plt.xticks([0, 1000, 2000, 3000, 4000, 5000], fontsize=12, fontweight='bold')
+    plt.xticks([0, 1000, 2000, 3000], fontsize=12, fontweight='bold')
     plt.yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0], fontsize=12, fontweight='bold')
     plt.legend(loc='upper right', prop={'size': 12, 'weight': 'bold'})
     plt.grid(True)

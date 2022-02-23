@@ -49,9 +49,6 @@ from monai.transforms import (
     EnsureType,
     RandAffined,
     )
-#from models import ResNet
-from models.cnn import cnn3d
-#from go_models.data_loader import DataLoader
 
 
 
@@ -60,14 +57,13 @@ def DataLoader_Cox(proj_dir, batch_size=8, _cox_model='LogisticHazard', num_dura
     """
     Create data augmentation and dataloder for image and lable inputs.
     
-    Arguments:
+    @Args:
         proj_dir {path} -- project path for preprocessed data.
-
-    Keyword arguments:
+    @Keyword args:
         batch_size {int} -- batch size for data loading.
-
-    Return:
+    @Return:
         train_DataLoader, tune_DataLoader, val_DataLoader
+    
     """
 
 
@@ -86,15 +82,8 @@ def DataLoader_Cox(proj_dir, batch_size=8, _cox_model='LogisticHazard', num_dura
     print('df_val shape:', df_val.shape)
 
 
-    # get train and val label (events, duration time)
+    # label transform
     #-------------------------------------------------
-    """
-    The LogisticHazard is a discrete-time method, meaning it requires discretization of the 
-    event times to be applied to continuous-time data.
-    We let num_durations define the size of this (equidistant) discretization grid, meaning our
-    network will have num_durations output nodes.
-    """
-
     if _cox_model == 'PCHazard':
         labtrans = PCHazard.label_transform(num_durations)
     elif _cox_model == 'LogisticHazard':
@@ -116,28 +105,34 @@ def DataLoader_Cox(proj_dir, batch_size=8, _cox_model='LogisticHazard', num_dura
         out_features = 1
         duration_index = labtrans.cuts
     
-    print('y_train:', y_train)
-    print('out_features:', out_features)
-    print('duration_index:', duration_index)
+    print('y_train:\n', y_train)
+    print('out_features:\n', out_features)
+    print('duration_index:\n', duration_index)
     #print(labtrans.cuts[y_train[0]])
+    
     # save duration index for train and evaluate steps
-    np.save(os.path.join(pro_data_dir, 'duration_index.npy'), duration_index)
+    dur_idx = os.path.join(pro_data_dir, 'duration_index.npy')
+    if not os.path.exists(dur_idx):
+        np.save(dur_idx, duration_index)
     
     # create dataset for data loader
     #--------------------------------
     datas = []
     for df in [df_train, df_tune, df_val]:
         imgs = df['img_dir'].to_list()
-        labels = [(event, time) for event, time in zip(y_train[1], y_train[0])]
-        print(labels[0:5])
-        labels = np.array(labels, dtype=np.int64)
-        #print(labels[0:5])
-        data = [{'image': img, 'label': label} for img, label in zip(imgs, labels)]
+        times = y_train[0].tolist()
+        events = y_train[1].tolist()
+        #time = torch.from_numpy(y_train[0])
+        #event = torch.from_numpy(y_train[1])
+        #labels = (time, event)
+        #print('labels:\n', labels)
+        data = [{'image': img, 'label': (time, event)} for img, time, event in zip(imgs, times, events)]
+        #print('data:\n', data)
         datas.append(data)
     train_data = datas[0]
     tune_data = datas[1]
     val_data = datas[2]
-    print('train_data:', train_data[0:5])
+    #print('train_data:\n', train_data)
 
     # Define transforms for image
     #--------------------------------
@@ -152,7 +147,6 @@ def DataLoader_Cox(proj_dir, batch_size=8, _cox_model='LogisticHazard', num_dura
         EnsureTyped(keys=['image']),
         ToTensord(keys=['image'])
         ])
-
     tune_transforms = Compose([
         LoadImaged(keys=['image']),
         AddChanneld(keys=['image']),
@@ -161,7 +155,6 @@ def DataLoader_Cox(proj_dir, batch_size=8, _cox_model='LogisticHazard', num_dura
         EnsureTyped(keys=['image']),
         ToTensord(keys=['image']),
         ])
-    
     val_transforms = Compose([
         LoadImaged(keys=['image']),
         AddChanneld(keys=['image']),
@@ -174,38 +167,43 @@ def DataLoader_Cox(proj_dir, batch_size=8, _cox_model='LogisticHazard', num_dura
     #post_pred = Compose([EnsureType(), Activations(softmax=True)])
     #post_label = Compose([EnsureType(), AsDiscrete(to_onehot=2)])
 
-    # Define dataset, data loader
+    # check data image and labels
     check_ds = Dataset(data=train_data, transform=train_transforms)
     check_loader = DataLoader(check_ds, batch_size=1)
     check_data = first(check_loader)
-    print(check_data['image'].shape, check_data['label'])
+    print('check data:\n', check_data)
+    print('\ncheck image and lable shape:', check_data['image'].shape, check_data['label'])
 
     # create a training data loader
-    train_ds = Dataset(data=train_data, transform=train_transforms)
+    ds_train = Dataset(data=train_data, transform=train_transforms)
     dl_train = DataLoader(
-        train_ds, 
+        ds_train, 
         batch_size=batch_size, 
         shuffle=True, 
         #num_workers=4, 
-        pin_memory=torch.cuda.is_available())
-
+        pin_memory=torch.cuda.is_available()
+        )
     # create a tuning data loader
-    tune_ds = Dataset(data=tune_data, transform=tune_transforms)
+    ds_tune = Dataset(data=tune_data, transform=tune_transforms)
     dl_tune = DataLoader(
-        tune_ds, 
+        ds_tune, 
         batch_size=batch_size, 
-        shuffle=True, 
+        shuffle=False, 
         #num_workers=4,
-        pin_memory=torch.cuda.is_available())
-    
+        pin_memory=torch.cuda.is_available()
+        )
     # create a validation data loader
-    val_ds = Dataset(data=val_data, transform=val_transforms)
+    ds_val = Dataset(data=val_data, transform=val_transforms)
     dl_val = DataLoader(
-        val_ds, 
+        ds_val, 
         batch_size=batch_size, 
-        #num_workers=4, 
-        pin_memory=torch.cuda.is_available())
+        #num_workers=4,
+        shuffle=False,
+        pin_memory=torch.cuda.is_available()
+        )
 
+    print('\ntrain_ds:', ds_train)
+    print('dl_train:', dl_train)
     print('successfully created data loader!')
 
     return dl_train, dl_tune, dl_val

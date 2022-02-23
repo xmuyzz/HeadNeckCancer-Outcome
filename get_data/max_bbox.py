@@ -50,9 +50,9 @@ def max_bbox(data_dir, tumor_type):
     
     ## get the max lengths of r, c, z
     count = 0
-    z_lens = []
-    y_lens = []
-    x_lens = []
+    d_lens = []
+    h_lens = []
+    w_lens = []
     empty_segs = []
     for seg_dir in seg_dirss:
         count += 1
@@ -62,13 +62,13 @@ def max_bbox(data_dir, tumor_type):
         #print(label_dir.split('/')[-1])
         #print(label_arr.shape)
         if np.any(seg_arr):
-            zmin, zmax, ymin, ymax, xmin, xmax = bbox_3D(seg_arr)
-            z_len = zmax - zmin
-            y_len = ymax - ymin
-            x_len = xmax - xmin
-            z_lens.append(z_len)
-            y_lens.append(y_len)
-            x_lens.append(x_len)
+            dmin, dmax, hmin, hmax, wmin, wmax = bbox_3D(seg_arr)
+            d_len = dmax - dmin
+            h_len = hmax - hmin
+            w_len = wmax - wmin
+            d_lens.append(d_len)
+            h_lens.append(h_len)
+            w_lens.append(w_len)
         elif not np.any(seg_arr):
             print('empty seg file:', seg_dir.split('/')[-1])
             empty_segs.append(seg_dir.split('/')[-1])
@@ -78,15 +78,15 @@ def max_bbox(data_dir, tumor_type):
     #print('r:', r_lens)
     #print('c:', c_lens)
     #print('z:', z_lens)
-    z_max = max(z_lens)
-    y_max = max(y_lens)
-    x_max = max(x_lens)
-    print('z_max:', z_max)
-    print('y_max:', y_max)
-    print('x_max:', x_max)
+    d_max = max(d_lens)
+    h_max = max(h_lens)
+    w_max = max(w_lens)
+    print('d_max:', d_max)
+    print('h_max:', h_max)
+    print('w_max:', w_max)
     
     print(empty_segs)
 
-    return z_max, y_max, x_max
+    return d_max, h_max, w_max
 
 

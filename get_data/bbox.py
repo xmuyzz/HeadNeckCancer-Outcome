@@ -4,7 +4,44 @@ import glob
 import pandas as pd                                                      
 import SimpleITK as sitk
 
+def get_bbox_3D(img):
 
+    """
+    Returns bounding box fit to the boundaries of non-zeros
+    
+    r: row
+    c: column
+    z: z direction
+    """
+
+    #z = np.any(img, axis=(0, 1))
+    #r = np.any(img, axis=(1, 2))
+    #c = np.any(img, axis=(0, 2))
+    d = np.any(img, axis=(1, 2))
+    h = np.any(img, axis=(0, 2))
+    w = np.any(img, axis=(0, 1))
+    #print('z:', z)
+    #print('y:', y)
+    #print('x:', x)
+    dmin, dmax = np.where(d)[0][[0, -1]]
+    hmin, hmax = np.where(h)[0][[0, -1]]
+    wmin, wmax = np.where(w)[0][[0, -1]]
+
+    dmin = int(dmin)
+    dmax = int(dmax)
+    hmin = int(hmin)
+    hmax = int(hmax)
+    wmin = int(wmin)
+    wmax = int(wmax)
+    
+    #print('dmin:', dmin)
+    #print('dmax:', dmax)
+    #print('hmin:', hmin)
+    #print('hmax:', hmax)
+    #print('wmin:', wmin)
+    #print('wmax:', wmax)
+
+    return dmin, dmax, hmin, hmax, wmin, wmax
 
 def bbox_3D(img):
 
@@ -16,10 +53,10 @@ def bbox_3D(img):
     x: x direction
     """
 
-    z = np.any(img, axis=(1, 2))
-    y = np.any(img, axis=(0, 2))
-    x = np.any(img, axis=(0, 1))
-    zmin, zmax = np.where(z)[0][[0, -1]]
+    r = np.any(img, axis=(1, 2))
+    c = np.any(img, axis=(0, 2))
+    z = np.any(img, axis=(0, 1))
+    rmin, rmax = np.where(r)[0][[0, -1]]
     ymin, ymax = np.where(y)[0][[0, -1]]
     xmin, xmax = np.where(x)[0][[0, -1]]
     zmin = int(zmin)
@@ -30,31 +67,6 @@ def bbox_3D(img):
     xmax = int(xmax)
 
     return zmin, zmax, ymin, ymax, xmin, xmax
-
-def get_bbox_3D(img):
-
-    """
-    Returns bounding box fit to the boundaries of non-zeros
-    
-    r: row
-    c: column
-    z: z direction
-    """
-    
-    r = np.any(img, axis=(1, 2))
-    c = np.any(img, axis=(0, 2))
-    z = np.any(img, axis=(0, 1))
-    rmin, rmax = np.where(r)[0][[0, -1]]
-    cmin, cmax = np.where(c)[0][[0, -1]]
-    zmin, zmax = np.where(z)[0][[0, -1]]
-    rmin = int(rmin)
-    rmax = int(rmax)
-    cmin = int(cmin)
-    cmax = int(cmax)
-    zmin = int(zmin)
-    zmax = int(zmax)
-
-    return rmin, rmax, cmin, cmax, zmin, zmax
 
 
 def get_bbox(mask_data):

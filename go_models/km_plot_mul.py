@@ -24,7 +24,7 @@ from pycox.utils import kaplan_meier
 
 
 
-def km_plot(out_dir, x, y, fn):
+def km_plot_mul(out_dir, df_kms, fn):
 
     """plot Kaplan-Meier curves
     """
@@ -35,7 +35,14 @@ def km_plot(out_dir, x, y, fn):
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     #ax.set_aspect('equal')
-    plt.plot(x, y, linewidth=3)
+    labels = ['High risks', 'Low risks']
+    for df_km, label in zip(df_kms, labels):
+        plt.plot(
+            df_km['km_index'].to_numpy(), 
+            df_km['km_value'].to_numpy(), 
+            linewidth=3,
+            label=label
+            )
     #plt.plot(surv.iloc[:, 0], surv.iloc[:, 137], linewidth=3, label='2')
     fig.suptitle('Kaplan-Meier Curve', fontweight='bold', fontsize=16)
     plt.ylabel('S(t | x)', fontweight='bold', fontsize=12)

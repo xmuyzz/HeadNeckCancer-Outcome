@@ -14,14 +14,9 @@ from go_models.surv_plot_mul import surv_plot_mul
 from go_models.km_plot import km_plot
 from go_models.risk_strat import risk_strat
 from go_models.kmf_risk_strat import kmf_risk_strat
-from go_models.roc import roc
 
 
-
-
-
-def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
-             cnn_name, epochs):
+def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val):
 
     """
     Model evaluation
@@ -71,6 +66,13 @@ def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
     #-------------------------------------
     surv = pd.read_csv(os.path.join(pro_data_dir, 'surv.csv'))
     print('survival prediction:\n', surv.round(3))
+    # plot single survival curve
+    surv_plot(
+        out_dir=out_dir, 
+        x=duration_index,
+        y=surv.iloc[:, 0],
+        fn='surv.png'
+        )
     # plot multiple survival predictions
     surv_plot_mul(
         out_dir=out_dir,
@@ -78,6 +80,38 @@ def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
         n_curves=100,
         fn='surv_multi.png'
         )
+
+    # compute the average survival predictions
+    #-------------------------------------------
+    surv_mean = surv.mean(axis=1)
+    #print('survival pred mean:\n', surv_mean.round(3))
+    # plot survival curve
+    surv_plot(
+        out_dir=out_dir,
+        x=duration_index,
+        y=surv_mean,
+        fn='surv_mean.png'
+        )
+
+    # Kaplan-Meier curve
+    #--------------------
+    km = kaplan_meier(
+        durations=df['time'].values,  
+        events=df['event'].values,
+        start_duration=0
+        )
+    # convert pd series to pd dataframe
+    surv_km = pd.DataFrame({'x': km.index, 'y': km.values})
+    #print('Kaplan-Meier curve:\n', surv_km.round(3))
+    surv_km.to_csv(os.path.join(pro_data_dir, 'surv_km.csv'), index=False)
+    # plot Kaplan-Meier curve
+    km_plot(
+        out_dir=out_dir,
+        x=surv_km['x'],
+        y=surv_km['y'],
+        fn='km_curve.png'
+        )
+    #print('saved Kaplan-Meier curve!')
 
     # Concordance index
     #-------------------    
@@ -137,15 +171,6 @@ def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
     print('nbll_score:', round(nbll_score, 3))
 
     # risk stratification
-    #---------------------------
-    kmf_risk_strat(
-        proj_dir, 
-        out_dir,
-        score_type=score_type,
-        cnn_name=cnn_name,
-        epochs=epochs,
-        )
-   
-    """calculate ROC
-    """
-    roc(proj_dir, out_dir)
+    risk_strat(proj_dir, out_dir)
+    kmf_risk_strat(proj_dir, out_dir)
+
