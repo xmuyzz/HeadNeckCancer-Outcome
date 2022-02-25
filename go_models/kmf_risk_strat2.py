@@ -6,13 +6,11 @@ from lifelines.plotting import add_at_risk_counts
 import matplotlib.pyplot as plt
 from lifelines.utils import median_survival_times
 from lifelines.statistics import logrank_test
-from go_models.km_plot_mul import km_plot_mul
-#from km_plot_mul import km_plot_mul
 from time import localtime, strftime
 
 
 
-def kmf_risk_strat(proj_dir, out_dir, score_type, cnn_name, epochs):
+def kmf_risk_strat2(proj_dir, out_dir, score_type, cnn_name, epochs):
 
     """
     Kaplan-Meier analysis for risk group stratification
@@ -47,7 +45,10 @@ def kmf_risk_strat(proj_dir, out_dir, score_type, cnn_name, epochs):
         prob_scores = surv.median(axis=0).to_list()
     elif score_type == '3year_survival':
         # choose 4th row if number of durations is 20
-        prob_scores == surv.iloc[4, :].to_list()
+        prob_scores = surv.iloc[4, :].to_list()
+    elif score_type == '5year_survival':
+        prob_scores = surv.iloc[7, :].to_list()
+
 
     """get median scores to stratify risk groups
     """

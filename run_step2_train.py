@@ -15,18 +15,18 @@ if __name__ == '__main__':
     proj_dir = '/mnt/HDD_6TB/HN_Outcome'
     out_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     cnn_name = 'resnet'
-    model_depth = 101  # [10, 18, 34, 50, 101, 152, 200]
+    model_depth = 152  # [10, 18, 34, 50, 101, 152, 200]
     n_classes = 20
     in_channels = 1
     batch_size = 8
-    epochs = 20
-    lr = 0.0001
+    epochs = 50
+    lr = 0.00001
     num_durations = 20
     verbose = True
     _cox_model = 'LogisticHazard'
     cox_model = 'LogisticHazard'
     load_model = 'model'
-    score_type = 'median'
+    score_type = '3year_survival'   #'median'
     evaluate_only = True
     augmentation = True
     
@@ -73,7 +73,7 @@ if __name__ == '__main__':
             dl_tune=dl_tune,
             dl_val=dl_val
             )
-
+    
     evaluate(
         proj_dir=proj_dir,
         out_dir=out_dir,

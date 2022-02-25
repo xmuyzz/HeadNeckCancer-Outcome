@@ -11,13 +11,10 @@ from pycox.models import DeepHitSingle
 from pycox.utils import kaplan_meier
 from go_models.surv_plot import surv_plot
 from go_models.surv_plot_mul import surv_plot_mul
-from go_models.km_plot import km_plot
-from go_models.risk_strat import risk_strat
-from go_models.kmf_risk_strat import kmf_risk_strat
 from go_models.roc import roc
-
-
-
+from go_models.kmf_risk_strat2 import kmf_risk_strat2
+from go_models.kmf_risk_strat3 import kmf_risk_strat3
+from go_models.kmf_risk_strat4 import kmf_risk_strat4
 
 
 def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
@@ -70,7 +67,7 @@ def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
     # plot individual survival pred curve
     #-------------------------------------
     surv = pd.read_csv(os.path.join(pro_data_dir, 'surv.csv'))
-    print('survival prediction:\n', surv.round(3))
+    #print('survival prediction:\n', surv.round(3))
     # plot multiple survival predictions
     surv_plot_mul(
         out_dir=out_dir,
@@ -138,14 +135,21 @@ def evaluate(proj_dir, out_dir, cox_model, load_model, dl_val, score_type,
 
     # risk stratification
     #---------------------------
-    kmf_risk_strat(
-        proj_dir, 
-        out_dir,
-        score_type=score_type,
-        cnn_name=cnn_name,
-        epochs=epochs,
-        )
-   
-    """calculate ROC
-    """
+    score_types = ['median', '3yr_surv', '5yr_surv', 'os_surv']
+    for score_type in score_types:
+        print(score_type)
+        kmf_risk_strat3(
+            proj_dir,
+            out_dir,
+            score_type=score_type,
+            cnn_name=cnn_name,
+            epochs=epochs,
+            )
+
+    # calculate ROC
+    #-------------
     roc(proj_dir, out_dir)
+
+
+
+
