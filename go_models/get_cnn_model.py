@@ -6,21 +6,22 @@ from models import cnn, resnet
 
 
 
-def get_cnn_model(cnn_name, model_depth, n_classes, in_channels):
-
-    assert cnn_name in ['cnn', 'resnet', 'resnet2p1d', 'preresnet', 'wideresnet', 
-        'resnext', 'densenet'], 'cnn model is not available!'
-    
+def get_cnn_model(cnn_name, n_classes, in_channels):
+ 
     if cnn_name == 'cnn':
-        """3D simple cnn model
         """
+        3D simple cnn model
+        """
+        print(cnn_name)
         model = cnn3d()
 
-    elif cnn_name == 'resnet':
+    elif cnn_name[:6] == 'resnet':
         """
         3D resnet with different depths
         model_depth = [10, 18, 34, 50, 101, 152, 200]
         """
+        print(cnn_name[6:])
+        model_depth = int(cnn_name[6:])
         model = resnet.generate_model(
             model_depth=model_depth,
             n_classes=n_classes,

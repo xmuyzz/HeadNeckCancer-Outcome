@@ -19,10 +19,6 @@ def split_dataset(proj_dir):
     
     """
 
-    pn_masked_arr_dir = os.path.join(proj_dir, 'data/pn_masked_arr')
-    pn_raw_arr_dir = os.path.join(proj_dir, 'data/pn_raw_arr')
-    p_masked_arr_dir = os.path.join(proj_dir, 'data/PMH_files/p_masked_arr')
-    p_raw_arr_dir = os.path.join(proj_dir, 'data/MDACC_files/p_raw_arr')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     
     df = pd.read_csv(os.path.join(pro_data_dir, 'df_img_label.csv'))

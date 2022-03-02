@@ -29,7 +29,7 @@ from get_data.bbox import bbox_3D
 
 
 
-def input_arr(data_dir, proj_dir, out_dir, new_spacing, norm_type, tumor_type, input_type, 
+def input_arr(data_dir, proj_dir, new_spacing, norm_type, tumor_type, input_type, 
               input_channel, run_max_bbox, img_dirss, seg_pn_dirss, save_img_type):
 
     """
@@ -44,11 +44,11 @@ def input_arr(data_dir, proj_dir, out_dir, new_spacing, norm_type, tumor_type, i
         images with preprocessing;        
     """
      
-    pn_masked_img_dir = os.path.join(out_dir, 'data/pn_masked_img')
-    pn_raw_img_dir = os.path.join(out_dir, 'data/pn_raw_img')
-    p_masked_img_dir = os.path.join(out_dir, 'data/PMH_files/p_masked_img')
-    p_raw_img_dir = os.path.join(out_dir, 'data/MDACC_files/p_raw_img')
-    toyset_dir = os.path.join(out_dir, 'data/toyset')
+    pn_masked_img_dir = os.path.join(proj_dir, 'data/pn_masked_img')
+    pn_raw_img_dir = os.path.join(proj_dir, 'data/pn_raw_img')
+    p_masked_img_dir = os.path.join(proj_dir, 'data/PMH_files/p_masked_img')
+    p_raw_img_dir = os.path.join(proj_dir, 'data/MDACC_files/p_raw_img')
+    toyset_dir = os.path.join(proj_dir, 'data/toyset')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
 
     if not os.path.exists(pn_raw_img_dir): os.mkdir(pn_raw_img_dir)

@@ -16,8 +16,7 @@ from go_models.kmf_risk_strat import kmf_risk_strat
 
 
 
-def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
-             cnn_name, epochs, lr):
+def evaluate2(proj_dir, cox_model, load_model, model_fn, data_loader):
 
     """
     Model evaluation
@@ -39,7 +38,7 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
     """
     
 
-    output_dir = os.path.join(proj_dir, 'output')
+    output_dir = os.path.join(proj_dir, 'output/tune')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     if not os.path.exists(output_dir): os.mkdir(output_dir)
     if not os.path.exists(pro_data_dir): os.mkdir(pro_data_dir)
@@ -47,62 +46,26 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
     # prediction
     #--------------
     if load_model == 'model':
-        model_fn = str(cnn_name) + '_' + str(epochs) + '_' + \
-                   str(lr) + '_' + 'model.pt'
         cox_model.load_net(os.path.join(pro_data_dir, model_fn))
     elif load_model == 'weights':
-        weights_fn = str(cnn_name) + '_' + str(epochs) + '_' + \
-                     str(lr) + '_' + 'weights.pt'
         cox_model.load_model_weights(os.path.join(pro_data_dir, weights_fn))
+
     # predict on val dataset and save prediction df
-    surv = cox_model.predict_surv_df(dl_val)
-
-    #fn_surv = str(cnn_name) + '_' + str(epochs) + '_' + \
-    #          str(lr) + '_' + 'surv.csv'
-    #surv.to_csv(os.path.join(pro_data_dir, fn_surv), index=False)
-
-    # load duration index to plot survival curves
-    duration_index = np.load(os.path.join(pro_data_dir, 'duration_index.npy'))
-
-    # check duration and events for each patient
-    #df_val = pd.read_csv(os.path.join(pro_data_dir, 'df_val0.csv'))
-    #df = df_val[['death_time', 'death_event']]
-    #df.columns = ['time', 'event']
-    #print('patient survival info:\n', df[0:10]) 
+    surv = cox_model.predict_surv_df(data_loader)
+    surv_fn = model_fn.split('_model')[0] + '_' + 'surv.csv'
+    surv.to_csv(os.path.join(pro_data_dir, surv_fn), index=False)
 
     # plot individual survival pred curve
     #-------------------------------------
-    #surv = pd.read_csv(os.path.join(pro_data_dir, 'surv.csv'))
-    #print('survival prediction:\n', surv.round(3))
-    # plot multiple survival predictions
-    fn = str(cnn_name) + '_' + str(epochs) + '_' + \
-         str(lr) + '_' + 'surv.png'
+    fn = surv_fn.split('.')[0] + '.png'
     surv_plot_mul(
         proj_dir=proj_dir,
-        n_curves=200,
+        n_curves=100,
         fn=fn
         )
 
     # Concordance index
     #-------------------    
-    """
-    Time dependent concordance index from:
-    Antolini, L.; Boracchi, P.; and Biganzoli, E. 2005. A time-dependent discrimination
-    index for survival data. Statistics in Medicine 24:3927–3944.
-    
-    @Arguments:
-        durations {np.array[n]} -- Event times (or censoring times.)
-        events {np.array[n]} -- Event indicators (0 is censoring).
-        surv {np.array[n_times, n]} -- Survival function (each row is a duraratoin, and each col
-            is an individual).
-        surv_idx {np.array[n_test]} -- Mapping of survival_func s.t. 'surv_idx[i]' gives index in
-            'surv' corresponding to the event time of individual 'i'.
-    @Keyword Arguments:
-        method {str} -- Type of c-index 'antolini' or 'adj_antolini' (default {'adj_antolini'}).
-    @Returns:
-        float -- Time dependent concordance index.
-    """
-
     df_val = pd.read_csv(os.path.join(pro_data_dir, 'df_val0.csv'))
     durations = df_val['death_time'].to_numpy()
     events = df_val['death_event'].to_numpy()
@@ -139,24 +102,5 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
     # Integrated scores
     nbll_score = ev.integrated_nbll(time_grid)
     print('nbll_score:', round(nbll_score, 3))
-
-    # risk stratification
-    #---------------------------
-    score_types = ['median', '3yr_surv', '5yr_surv', 'os_surv']
-    for score_type in score_types:
-        print(score_type)
-        kmf_risk_strat(
-            proj_dir,
-            score_type=score_type,
-            cnn_name=cnn_name,
-            epochs=epochs,
-            lr=lr
-            )
-
-    # calculate ROC
-    #-------------
-    roc(proj_dir)
-
-
 
 

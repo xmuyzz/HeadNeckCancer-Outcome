@@ -24,7 +24,7 @@ from pycox.utils import kaplan_meier
 
 
 
-def surv_plot(out_dir, x, y, fn):
+def surv_plot(proj_dir, x, y, fn):
 
     """
     plot survival curves

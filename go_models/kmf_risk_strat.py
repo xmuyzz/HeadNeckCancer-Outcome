@@ -11,8 +11,7 @@ from time import localtime, strftime
 from sklearn.cluster import KMeans
 
 
-def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
-                    n_clusters=3):
+def kmf_risk_strat(proj_dir, surv_fn, score_type, hpv, n_clusters=3):
 
     """
     Kaplan-Meier analysis for risk group stratification
@@ -21,7 +20,8 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
         proj_dir {path} -- project dir;
         out_dir {path} -- output dir;
         score_type {str} -- prob scores: mean, median, 3-year survival;
-
+        hpv {str} -- hpv status: 'pos', 'neg';
+    
     Returns:
         KM plot, median survial time, log-rank test;
     
@@ -31,7 +31,7 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
     """
 
 
-    output_dir = os.path.join(out_dir, 'output')
+    output_dir = os.path.join(proj_dir, 'output')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     if not os.path.exists(output_dir): 
         os.mkdir(output_dir)
@@ -40,10 +40,10 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
     
     # calculate probility score for each patient
     #--------------------------------------------
-    surv = pd.read_csv(os.path.join(pro_data_dir, 'surv.csv'))
-    if score_type == 'mean':
+    surv = pd.read_csv(os.path.join(pro_data_dir, surv_fn))
+    if score_type == 'mean_surv':
         prob_scores = surv.mean(axis=0).to_list()
-    elif score_type == 'median':
+    elif score_type == 'median_surv':
         prob_scores = surv.median(axis=0).to_list()
     elif score_type == '3yr_surv':
         # choose 5th row if number of durations is 20
@@ -57,10 +57,12 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
     # get median scores to stratify risk groups
     median_score = np.median(prob_scores)
     df_val = pd.read_csv(os.path.join(pro_data_dir, 'df_val0.csv'))
+    df_val = df_val[['death_time', 'death_event', 'hpv', 'stage', 'gender', 'age']]
+    df_val['hpv'] = df_val['hpv'].replace({'negative': 0, 'positive': 1, 'unknown': 2})
     #pat_id = df_val['pat_id'].to_list()
     df_val['score'] = prob_scores
     #print('prob_scores:', prob_scores)
-    
+
     # plot histogram for scores distribution
     #---------------------------------------
     fig = plt.figure()
@@ -84,8 +86,21 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
     prob_scores = np.array(prob_scores).reshape(-1, 1)
     k_means.fit(prob_scores)
     groups = k_means.predict(prob_scores)
+    #print(groups)
     df_val['group'] = groups
-
+    
+    # check hpv status
+    #------------------
+    if hpv == 'pos':
+        df_val = df_val.loc[df_val['hpv'].isin([1])]
+        print('patient n = ', df_val.shape[0])
+    elif hpv == 'neg':
+        df_val= df_val.loc[df_val['hpv'].isin([0])]
+        print('patient n = ', df_val.shape[0])
+    else:
+        df_val = df_val
+        print('patient n = ', df_val.shape[0])
+    
     # multivariate log-rank test
     #---------------------------
     results = multivariate_logrank_test(
@@ -105,8 +120,20 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
     dfs = []
     for i in range(n_clusters):
         df = df_val.loc[df_val['group'] == i]
-        #print('df:', df.shape[0], df)
+        print('df:', i, df.shape[0])
         dfs.append(df)
+    
+    # 5-year OS for subgroups
+    for i in range(3):
+        events = []
+        for time, event in zip(dfs[i]['death_time'], dfs[i]['death_event']):
+            if time <= 1825 and event == 1:
+                event = 1
+                events.append(event)
+        os_5yr = 1 - np.around(len(events)/dfs[i].shape[0], 3)
+        print('5-year survial rate:', i, os_5yr)
+
+    # Kaplan-Meier plot
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     #labels = ['Medium risk', 'Low risk', 'High risk']
@@ -146,14 +173,27 @@ def kmf_risk_strat3(proj_dir, out_dir, score_type, cnn_name, epochs,
     plt.grid(True)
     plt.title(score_type, fontsize=20)
     plt.tight_layout(pad=1.08, h_pad=None, w_pad=None, rect=None)
-    fn = 'kmf_' + str(score_type) + '.png'
-    plt.savefig(os.path.join(output_dir, fn), format='png', dpi=300)
+    kmf_fn = surv_fn.split('_surv')[0] + '_' + 'kmf.png'
+    #fn = 'kmf_' + str(score_type) + '.png'
+    plt.savefig(os.path.join(output_dir, kmf_fn), format='png', dpi=300)
     plt.close()
     
     #print('saved Kaplan-Meier curve!')
 
     
+if __name__ == '__main__':
 
+    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
+    surv_fn = 'resnet101_20_0.0001_surv.csv'
+    score_type = 'os_surv'
+    hpv = 'neg'
+
+    kmf_risk_strat(
+        proj_dir=proj_dir, 
+        surv_fn=surv_fn, 
+        score_type=score_type,
+        hpv=hpv
+        )
 
 
 

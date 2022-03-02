@@ -6,7 +6,7 @@ import SimpleITK as sitk
 from sklearn.model_selection import KFold
 
 
-def img_label_df(proj_dir, out_dir, save_img_type):
+def img_label_df(proj_dir, save_img_type):
 
 
     """
@@ -23,14 +23,14 @@ def img_label_df(proj_dir, out_dir, save_img_type):
 
     """
 
-    pn_masked_img_dir = os.path.join(out_dir, 'data/pn_masked_img')
-    pn_raw_img_dir = os.path.join(out_dir, 'data/pn_raw_img')
-    p_masked_img_dir = os.path.join(out_dir, 'data/PMH_files/p_masked_img')
-    p_raw_img_dir = os.path.join(out_dir, 'data/MDACC_files/p_raw_img')
+    pn_masked_img_dir = os.path.join(proj_dir, 'data/pn_masked_img')
+    pn_raw_img_dir = os.path.join(proj_dir, 'data/pn_raw_img')
+    p_masked_img_dir = os.path.join(proj_dir, 'data/PMH_files/p_masked_img')
+    p_raw_img_dir = os.path.join(proj_dir, 'data/MDACC_files/p_raw_img')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
 
-    """create df for data and pat_id to match labels
-    """
+    # create df for data and pat_id to match labels
+    #----------------------------------------------
     if save_img_type == 'npy':
         img_dirs = [path for path in sorted(glob.glob(pn_masked_img_dir + '/*npy'))]
     elif save_img_type == 'nii':
@@ -47,8 +47,8 @@ def img_label_df(proj_dir, out_dir, save_img_type):
     print(df_img[0:10])
 
 
-    """create matching label df
-    """
+    # create matching label df
+    #--------------------------
     df = pd.read_csv(os.path.join(pro_data_dir, 'label.csv'))
     print('total label number:', df.shape)
     ## add img paths to the label df
@@ -60,8 +60,8 @@ def img_label_df(proj_dir, out_dir, save_img_type):
     print('total label number:', df_label.shape)
     print(df_label[0:10])
 
-    """create df for data and pat_id to match labels
-    """
+    # create df for data and pat_id to match labels
+    #----------------------------------------------
     fns = []
     for img_dir in img_dirs:
         ID = img_dir.split('/')[-1].split('.')[0]
@@ -72,13 +72,12 @@ def img_label_df(proj_dir, out_dir, save_img_type):
     print('total img number:', df_img.shape[0])
     print(df_img[0:10])
 
-    """merge df_img and df_label using matching patient ID
-    """
+    # merge df_img and df_label using matching patient ID
+    #----------------------------------------------------
     df = pd.merge(df_label, df_img, on='pat_id')
     print('total df size:', df.shape)
     print(df[0:20])
     df.to_csv(os.path.join(pro_data_dir, 'df_img_label.csv'), index=False)
-    df.to_csv(os.path.join(out_dir, 'df_img_label.csv'), index=False)
     print('complete img and lable df have been saved!!!')
     
 

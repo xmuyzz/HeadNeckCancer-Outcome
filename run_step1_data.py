@@ -36,7 +36,7 @@ from get_data.get_dir import get_dir
 if __name__ == '__main__':
 
     data_dir = '/mnt/aertslab/DATA/HeadNeck/HN_PETSEG/curated'
-    proj_dir = '/mnt/HDD_6TB/HN_Outcome'
+    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     out_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     clinical_data_file = 'HN_clinical_meta_data.csv'
     save_label = 'label.csv'
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     new_spacing = (2, 2, 2)
     toyset = False
     run_max_bbox = False
-    run_data = True
+    run_data = False
     split_data_only = False
 
     if split_data_only:
@@ -64,7 +64,6 @@ if __name__ == '__main__':
             input_arr(
                 data_dir=data_dir, 
                 proj_dir=proj_dir,
-                out_dir=out_dir,
                 new_spacing=new_spacing,
                 norm_type=norm_type, 
                 tumor_type=tumor_type, 
@@ -84,7 +83,6 @@ if __name__ == '__main__':
 
         img_label_df(
             proj_dir=proj_dir,
-            out_dir=out_dir,
             save_img_type=save_img_type
             )
 

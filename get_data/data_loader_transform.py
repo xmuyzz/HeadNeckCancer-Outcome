@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 import numpy as np
@@ -185,9 +184,11 @@ def data_prep(proj_dir, batch_size, _cox_model, num_durations):
     df_train = df_train_.sample(frac=0.9, random_state=200)
     df_tune = df_train_.drop(df_train.index)
     df_val = pd.read_csv(os.path.join(pro_data_dir, 'df_val0.csv'))
+    df_test = pd.read_csv(os.path.join(pro_data_dir, 'df_test.csv'))
     print('df_train shape:', df_train.shape)
     print('df_tune shape:', df_tune.shape)
     print('df_val shape:', df_val.shape)
+    print('df_test shape:', df_test.shape)
 
     """
     The LogisticHazard is a discrete-time method, meaning it requires discretization 
@@ -206,7 +207,7 @@ def data_prep(proj_dir, batch_size, _cox_model, num_durations):
 
     dfs = []
     get_target = lambda df: (df['death_time'].values, df['death_event'].values)
-    for df in [df_train, df_tune, df_val]:
+    for df in [df_train, df_tune, df_val, df_test]:
         if _cox_model in ['PCHazard', 'LogisticHazard', 'DeepHit']:
             #labtrans = PCHazard.label_transform(num_durations)
             y = labtrans.fit_transform(*get_target(df))
@@ -225,6 +226,7 @@ def data_prep(proj_dir, batch_size, _cox_model, num_durations):
     df_train = dfs[0]
     df_tune = dfs[1]
     df_val = dfs[2]
+    df_test = dfs[3]
     #print('out_features:', out_features)
     #print('duration_index:', duration_index)
     #print(labtrans.cuts[y_train[0]])
@@ -232,7 +234,7 @@ def data_prep(proj_dir, batch_size, _cox_model, num_durations):
     if not os.path.exists(os.path.join(pro_data_dir, 'duration_index.npy')):
         np.save(os.path.join(pro_data_dir, 'duration_index.npy'), duration_index)
      
-    return df_train, df_tune, df_val
+    return df_train, df_tune, df_val, df_test
 
 
 def data_loader_transform(proj_dir, batch_size, _cox_model, num_durations):
@@ -263,9 +265,14 @@ def data_loader_transform(proj_dir, batch_size, _cox_model, num_durations):
         ScaleIntensity(minv=0.0, maxv=1.0), 
         EnsureType(data_type='tensor')
         ])
-    
+    test_transforms = Compose([
+        #AddChannel,
+        #EnsureChannelFirst(),
+        ScaleIntensity(minv=0.0, maxv=1.0),
+        EnsureType(data_type='tensor')
+        ])
     # create dataset for train, tune and val
-    df_train, df_tune, df_val = data_prep(
+    df_train, df_tune, df_val, df_test = data_prep(
         proj_dir, 
         batch_size, 
         _cox_model, 
@@ -276,10 +283,12 @@ def data_loader_transform(proj_dir, batch_size, _cox_model, num_durations):
         dataset_train = dataset1(x_train, *y_train)
         dataset_tune = dataset1(x_tune, *y_tune)
         dataset_val = dataset_pred(x_val)
+        dataset_val = dataset_pred(x_test)
     elif _cox_model in ['PCHazard', 'LogisticHazard', 'DeepHit']:
         dataset_train = dataset0(df_train, transform=train_transforms)
         dataset_tune = dataset0(df_tune, transform=tune_transforms)
         dataset_val = dataset_pred(df_val, transform=val_transforms)
+        dataset_test = dataset_pred(df_test, transform=val_transforms)
     else:
         print('choose another cox model!')
     
@@ -306,10 +315,14 @@ def data_loader_transform(proj_dir, batch_size, _cox_model, num_durations):
         batch_size=batch_size,
         shuffle=False
         )
-
+    dl_test = DataLoader(
+        dataset=dataset_test,
+        batch_size=batch_size,
+        shuffle=False
+        )
     #print('successfully created data loaders!')
 
-    return dl_train, dl_tune, dl_val
+    return dl_train, dl_tune, dl_val, dl_test
 
 
 

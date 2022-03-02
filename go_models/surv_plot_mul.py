@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 
 
 
-def surv_plot_mul(out_dir, proj_dir, n_curves, fn):
+def surv_plot_mul(proj_dir, n_curves, fn):
 
     """plot survival curves
     """
 
-    output_dir = os.path.join(out_dir, 'output')
+    output_dir = os.path.join(proj_dir, 'output')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     if not os.path.exists(output_dir): os.mkdir(output_dir)
     if not os.path.exists(pro_data_dir): os.mkdir(pro_data_dir)
