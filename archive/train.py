@@ -36,28 +36,24 @@ if __name__ == '__main__':
             proj_dir=proj_dir,
             batch_size=batch_size,
             _cox_model=_cox_model,
-            num_durations=num_durations
-            )
+            num_durations=num_durations)
     else:
         dl_train, dl_tune, dl_val, dl_test = data_loader_transform(
             proj_dir, 
             batch_size=batch_size, 
             _cox_model=_cox_model, 
-            num_durations=num_durations
-            )
+            num_durations=num_durations)
     
     for cnn_name in ['resnet18', 'resnet34', 'resnet50', 'resnet152', 'resnet200']:   
         cnn_model = get_cnn_model(
             cnn_name=cnn_name, 
             n_classes=n_classes, 
-            in_channels=in_channels
-            )
+            in_channels=in_channels)
         cox_model = get_cox_model(
             proj_dir=proj_dir,
             cnn_model=cnn_model,
             _cox_model=_cox_model,
-            lr=lr
-            )
+            lr=lr)
         for epochs in [20]:
             for lr in [0.01, 0.0001, 0.00001, 0.1]:
                 train(
@@ -68,8 +64,7 @@ if __name__ == '__main__':
                     dl_tune=dl_tune,
                     dl_val=dl_val,
                     cnn_name=cnn_name,
-                    lr=lr
-                    )
+                    lr=lr)
 
                 evaluate(
                     proj_dir=proj_dir,
@@ -79,6 +74,5 @@ if __name__ == '__main__':
                     score_type=score_type,
                     cnn_name=cnn_name,
                     epochs=epochs,
-                    lr=lr
-                    )
+                    lr=lr)
 

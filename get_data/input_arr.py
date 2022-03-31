@@ -1,20 +1,3 @@
-"""
-  ----------------------------------------------
-  DeepContrast - run DeepContrast pipeline step1
-  ----------------------------------------------
-  ----------------------------------------------
-  Author: AIM Harvard
-  
-  Python Version: 3.6.8
-  ----------------------------------------------
-  
-  Deep-learning-based IV contrast detection
-  in CT scans - all param.s are read
-  from a config file stored under "/config"
-  
-"""
-
-
 import numpy as np
 import os
 import glob

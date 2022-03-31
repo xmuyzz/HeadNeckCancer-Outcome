@@ -1,19 +1,3 @@
-"""
-  ----------------------------------------------
-  DeepContrast - run DeepContrast pipeline step1
-  ----------------------------------------------
-  ----------------------------------------------
-  Author: AIM Harvard
-  
-  Python Version: 3.6.8
-  ----------------------------------------------
-  
-  Deep-learning-based IV contrast detection
-  in CT scans - all param.s are read
-  from a config file stored under "/config"
-  
-"""
-
 import os
 import numpy as np
 import pandas as pd
@@ -59,8 +43,7 @@ if __name__ == '__main__':
             img_dirss, seg_pn_dirss, exclude_pn, exclude_p = get_dir(
                 data_dir=data_dir,
                 proj_dir=proj_dir,
-                tumor_type=tumor_type
-                )
+                tumor_type=tumor_type)
             input_arr(
                 data_dir=data_dir, 
                 proj_dir=proj_dir,
@@ -72,18 +55,14 @@ if __name__ == '__main__':
                 run_max_bbox=run_max_bbox,
                 img_dirss=img_dirss,
                 seg_pn_dirss=seg_pn_dirss,
-                save_img_type=save_img_type
-                )
+                save_img_type=save_img_type)
 
         label(
             proj_dir=proj_dir,
             clinical_data_file=clinical_data_file, 
-            save_label=save_label
-            )
+            save_label=save_label)
 
         img_label_df(
             proj_dir=proj_dir,
-            save_img_type=save_img_type
-            )
-
+            save_img_type=save_img_type)
         split_dataset(proj_dir=proj_dir)

@@ -29,4 +29,8 @@ class Concordance(tt.cb.MonitorMetrics):
     def get_last_score(self):
         return self.scores['concordance']['score'][-1]
 
-
+concordance = Concordance(x_test, durations_test, events_test)
+early_stopping =  tt.callbacks.EarlyStopping(get_score=concordance.get_last_score,
+                                             minimize=False)
+callbacks = [concordance, early_stopping]
+log = model.fit(x_train, y_train, batch_size, epochs, callbacks, val_data=val)

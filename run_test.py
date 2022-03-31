@@ -34,26 +34,23 @@ if __name__ == '__main__':
         proj_dir, 
         batch_size=batch_size, 
         _cox_model=_cox_model, 
-        num_durations=num_durations
-        )
+        num_durations=num_durations)
     
     cnn_model = get_cnn_model(
         cnn_name=cnn_name, 
         n_classes=n_classes, 
-        in_channels=in_channels
-        )
+        in_channels=in_channels)
+    
     cox_model = get_cox_model(
         proj_dir=proj_dir,
         cnn_model=cnn_model,
         _cox_model=_cox_model,
-        lr=lr
-        )
+        lr=lr)
 
     evaluate2(
         proj_dir=proj_dir,
         cox_model=cox_model,
         load_model=load_model,
         model_fn=model_fn,
-        data_loader=dl_val,
-        )
+        data_loader=dl_val,)
 

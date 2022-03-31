@@ -22,10 +22,7 @@ from pycox.models import DeepHitSingle
 from pycox.utils import kaplan_meier
 
 
-
-
-
-def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
+def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
 
     """
     get cox model
@@ -41,13 +38,9 @@ def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
 
     """
 
-
-    pro_data_dir = os.path.join(proj_dir, 'pro_data')
-    if not os.path.exists(pro_data_dir): os.mkdir(pro_data_dir)
- 
     duration_index = np.load(os.path.join(pro_data_dir, 'duration_index.npy'))
 
-    if _cox_model == 'PCHazard':
+    if cox_model_name == 'PCHazard':
         """
         The Piecewise Constant Hazard (PC-Hazard) model assumes that 
         the continuous-time hazard function is constant in predefined intervals. 
@@ -59,7 +52,7 @@ def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
             optimizer=tt.optim.Adam(lr),
             duration_index=duration_index
             )
-    elif _cox_model == 'LogisticHazard':
+    elif cox_model_name == 'LogisticHazard':
         """
         The Logistic-Hazard method parametrize the discrete hazards and 
         optimize the survival likelihood. It is also called Partial Logistic 
@@ -70,7 +63,7 @@ def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
             optimizer=tt.optim.Adam(lr),
             duration_index=duration_index
             )
-    elif _cox_model == 'DeepHitSingle':
+    elif cox_model_name == 'DeepHitSingle':
         """
         DeepHit is a PMF method with a loss for improved ranking that can
         handle competing risks.
@@ -82,7 +75,7 @@ def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
             sigma=0.1, 
             duration_index=duration_index
             )
-    elif _cox_model == 'CoxPH':
+    elif cox_model_name == 'CoxPH':
         """
         CoxPH is a Cox proportional hazards model also referred to as DeepSurv.
         """
@@ -92,7 +85,7 @@ def get_cox_model(proj_dir, cnn_model, _cox_model, lr):
             )
     else:
         print('please select other cox models!')
-    print('cox model:', _cox_model)
+    print('cox model:', cox_model_name)
 
     return cox_model
 
