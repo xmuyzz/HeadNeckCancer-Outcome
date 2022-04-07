@@ -63,10 +63,6 @@ class LRScheduler(tt.cb.Callback):
         return stop_signal
 
 
-
-
-
-
 class callback(Callback):
 
     def __init__(self, model, save_dir, val_data, run):

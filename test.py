@@ -16,8 +16,8 @@ from statistics.kmf_risk_strat import kmf_risk_strat
 
 
 
-def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
-             cnn_name, epochs, lr):
+def test(pro_data_dir, output_dir, cox_model, load_model, dl_val, score_type,
+         cnn_name, epochs, lr):
 
     """
     Model evaluation
@@ -39,13 +39,6 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
     """
     
 
-    output_dir = os.path.join(proj_dir, 'output')
-    pro_data_dir = os.path.join(proj_dir, 'pro_data')
-    if not os.path.exists(output_dir): os.mkdir(output_dir)
-    if not os.path.exists(pro_data_dir): os.mkdir(pro_data_dir)
-
-    # prediction
-    #--------------
     if load_model == 'model':
         model_fn = str(cnn_name) + '_' + str(epochs) + '_' + \
                    str(lr) + '_' + 'model.pt'
@@ -80,8 +73,7 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
     surv_plot_mul(
         proj_dir=proj_dir,
         n_curves=200,
-        fn=fn
-        )
+        fn=fn)
 
     # Concordance index
     #-------------------    
@@ -110,8 +102,7 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
         surv=surv, 
         durations=durations,  
         events=events,
-        censor_surv='km'
-        )
+        censor_surv='km')
     c_index = ev.concordance_td()
     print('concordance index:', round(c_index, 3))
 
@@ -150,8 +141,7 @@ def evaluate(proj_dir, cox_model, load_model, dl_val, score_type,
             score_type=score_type,
             cnn_name=cnn_name,
             epochs=epochs,
-            lr=lr
-            )
+            lr=lr)
 
     # calculate ROC
     #-------------

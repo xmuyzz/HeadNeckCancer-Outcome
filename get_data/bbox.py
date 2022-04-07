@@ -9,9 +9,6 @@ def get_bbox_3D(img):
     """
     Returns bounding box fit to the boundaries of non-zeros
     
-    r: row
-    c: column
-    z: z direction
     """
 
     #z = np.any(img, axis=(0, 1))

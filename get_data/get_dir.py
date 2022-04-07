@@ -1,27 +1,9 @@
-""" 
-  ----------------------------------------------
-  DeepContrast - run DeepContrast pipeline step1
-  ----------------------------------------------
-  ----------------------------------------------
-  Author: AIM Harvard
-  
-  Python Version: 3.6.8
-  ----------------------------------------------
-  
-  Deep-learning-based IV contrast detection
-  in CT scans - all param.s are read
-  from a config file stored under "/config"
-  
-"""
-
-
 import numpy as np
 import os
 import glob
 import pandas as pd
 import SimpleITK as sitk
 import pickle
-
 
 
 def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
@@ -40,7 +22,6 @@ def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
 
     Raise errors:
         None;
-
     """
 
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
@@ -60,11 +41,10 @@ def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
     PMH_seg_p_dir = os.path.join(data_dir, 'PMH_files/label_p_reg')
     MDACC_seg_p_dir = os.path.join(data_dir, 'MDACC_files/label_p_reg')
     # node segmentation dirs
-    CHUM_seg_p_dir = os.path.join(data_dir, 'CHUM_files/label_n_reg')
-    CHUS_seg_p_dir = os.path.join(data_dir, 'CHUS_files/label_n_reg')
-    PMH_seg_p_dir = os.path.join(data_dir, 'PMH_files/label_n_reg')
-    MDACC_seg_p_dir = os.path.join(data_dir, 'MDACC_files/label_n_reg')
-
+    CHUM_seg_n_dir = os.path.join(data_dir, 'CHUM_files/label_n_reg')
+    CHUS_seg_n_dir = os.path.join(data_dir, 'CHUS_files/label_n_reg')
+    PMH_seg_n_dir = os.path.join(data_dir, 'PMH_files/label_n_reg')
+    MDACC_seg_n_dir = os.path.join(data_dir, 'MDACC_files/label_n_reg')
 
     # get dirs for all img and seg
     #------------------------------
@@ -72,7 +52,7 @@ def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
         CHUM_img_dir, CHUS_img_dir, PMH_img_dir, MDACC_img_dir,
         CHUM_seg_pn_dir, CHUS_seg_pn_dir, PMH_seg_pn_dir, MDACC_seg_pn_dir,
         CHUM_seg_p_dir, CHUS_seg_p_dir, PMH_seg_p_dir, MDACC_seg_p_dir,
-        CHUM_seg_p_dir, CHUS_seg_p_dir, PMH_seg_p_dir, MDACC_seg_p_dir
+        CHUM_seg_n_dir, CHUS_seg_n_dir, PMH_seg_n_dir, MDACC_seg_n_dir
         ]
     img_dirss = []
     seg_pn_dirss = []
@@ -120,7 +100,7 @@ def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
     ## get missing names of pn, p and n segs
     missing_pn = list(set(fnss[0]) - set(fnss[1]))
     missing_p = list(set(fnss[0]) - set(fnss[2]))
-    missing_p = list(set(fnss[0]) - set(fnss[3]))
+    missing_n = list(set(fnss[0]) - set(fnss[3]))
     print('missing pn:', missing_pn)
     print('missing p:', missing_p)
     print('missing n:', missing_n)
@@ -138,7 +118,7 @@ def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
             fns = []
             for seg_dir in list_seg_dir:
                 #count += 1
-                print(count)
+                #print(count)
                 seg_img = sitk.ReadImage(seg_dir, sitk.sitkFloat32)
                 seg_arr = sitk.GetArrayFromImage(seg_img)
                 if np.any(seg_arr):
@@ -167,72 +147,115 @@ def get_dir(data_dir, proj_dir, tumor_type, run_empty_seg=True):
     # get img and seg lists with correct patients
     #-------------------------------------------
     ## exlcude patients with empty or missiong segs
-    exclude_pn = missing_pn + empty_pn 
-    exclude_p = missing_p + empty_p
-    exlcude_n = missing_n + empty_n
-    
-    ## get img dirs with matching img and pn seg
     if tumor_type == 'primary_node':
-        excludes = exclude_pn
-        _dirss = []
-    for dirss in [img_dirss, seg_pn_dirss, seg_p_dirss, seg_n_dirss]:
-        for dirs in dirss:
-            _dirs = []
-            for dir in dirs:
-                fn = dir.split('/')[-1].split('_')[0]
-                if fn not in excludes:
-                    #print(fn)
-                    _dirs.append(dir)
-            _dirss.append(_dirs)
-        seg_pn_dirss_ = []
-        for seg_pn_dirs in seg_pn_dirss:
-            seg_pn_dirs_ = []
-            for seg_pn_dir in seg_pn_dirs:
-                fn = seg_pn_dir.split('/')[-1].split('_')[0]
-                if fn not in excludes:
-                    #print(fn)
-                    seg_pn_dirs_.append(seg_pn_dir)
-            seg_pn_dirss_.append(seg_pn_dirs_)
-
-    img_dirss = img_dirss_
-    seg_pn_dirss = seg_pn_dirss_
-    print(len(img_dirss[1]))
-    print(len(seg_pn_dirss[1]))
-
-    ## get img dirs with matching img and pn seg
-    if tumor_type == 'primary_node':
-        excludes = exclude_pn
-        img_dirss_ = []
-        for img_dirs in img_dirss:
-            img_dirs_ = []
-            for img_dir in img_dirs:
-                fn = img_dir.split('/')[-1].split('_')[0]
-                if fn not in excludes:
-                    #print(fn)
-                    img_dirs_.append(img_dir)
-            img_dirss_.append(img_dirs_)
-        seg_pn_dirss_ = []
-        for seg_pn_dirs in seg_pn_dirss:
-            seg_pn_dirs_ = []
-            for seg_pn_dir in seg_pn_dirs:
-                fn = seg_pn_dir.split('/')[-1].split('_')[0]
-                if fn not in excludes:
-                    #print(fn)
-                    seg_pn_dirs_.append(seg_pn_dir)
-            seg_pn_dirss_.append(seg_pn_dirs_)
-
-    img_dirss = img_dirss_
-    seg_pn_dirss = seg_pn_dirss_
-    print(len(img_dirss[1]))
-    print(len(seg_pn_dirss[1]))
-
-    # save lists of dirs to pickle
-    for dirss, fn in zip([img_dirss, seg_pn_dirss], 
-                         ['img_dirss.pkl', 'seg_pn_dirss.pkl']):
-        fn = os.path.join(pro_data_dir, fn)
-        with open(fn, 'wb') as f:
-            pickle.dump(dirss, f)
-    print('successfully save all data dir!')
+        excludes = missing_pn + empty_pn
+        dirsss = [img_dirss, seg_pn_dirss]
+        _dirsss = []
+        for dirss in dirsss:
+            _dirss = []
+            for dirs in dirss:
+                _dirs = []
+                for dir in dirs:
+                    fn = dir.split('/')[-1].split('_')[0]
+                    if fn not in excludes:
+                        #print(fn)
+                        _dirs.append(dir)
+                _dirss.append(_dirs)
+            _dirsss.append(_dirss)
+        img_pn_dirss = _dirsss[0]
+        seg_pn_dirss = _dirsss[1]
+        print('img_pn_dirss:', len(img_pn_dirss[1]))
+        print('seg_pn_dirss:', len(seg_pn_dirss[1]))
+        # save to pickle
+        for dirss, fn in zip([img_pn_dirss, seg_pn_dirss],
+                             ['img_pn_dirss.pkl', 'seg_pn_dirss.pkl']):
+            fn = os.path.join(pro_data_dir, fn)
+            with open(fn, 'wb') as f:
+                pickle.dump(dirss, f)
     
+    elif tumor_type == 'primary':
+        excludes = missing_p + empty_p
+        dirsss = [img_dirss, seg_p_dirss]
+        _dirsss = []
+        for dirss in dirsss:
+            _dirss = []
+            for dirs in dirss:
+                _dirs = []
+                for dir in dirs:
+                    fn = dir.split('/')[-1].split('_')[0]
+                    if fn not in excludes:
+                        #print(fn)
+                        _dirs.append(dir)
+                _dirss.append(_dirs)
+            _dirsss.append(_dirss)
+        img_p_dirss = _dirsss[0]
+        seg_p_dirss = _dirsss[1]
+        print('img_p_dirss:', len(img_p_dirss[1]))
+        print('seg_p_dirss:', len(seg_p_dirss[1]))
+        # save to pickle
+        for dirss, fn in zip([img_p_dirss, seg_p_dirss],
+                             ['img_p_dirss.pkl', 'seg_p_dirss.pkl']):
+            fn = os.path.join(pro_data_dir, fn)
+            with open(fn, 'wb') as f:
+                pickle.dump(dirss, f)
 
-    return img_dirss, seg_pn_dirss, exclude_pn, exclude_p
+    elif tumor_type == 'node':
+        excludes = missing_n + empty_n
+        dirsss = [img_dirss, seg_n_dirss]
+        _dirsss = []
+        for dirss in dirsss:
+            _dirss = []
+            for dirs in dirss:
+                _dirs = []
+                for dir in dirs:
+                    fn = dir.split('/')[-1].split('_')[0]
+                    if fn not in excludes:
+                        #print(fn)
+                        _dirs.append(dir)
+                _dirss.append(_dirs)
+            _dirsss.append(_dirss)
+        img_n_dirss = _dirsss[0]
+        seg_n_dirss = _dirsss[1]
+        print('img_n_dirss:', len(img_n_dirss[1]))
+        print('seg_n_dirss:', len(seg_n_dirss[1]))
+        # save to pickle
+        for dirss, fn in zip([img_n_dirss, seg_n_dirss],
+                             ['img_n_dirss.pkl', 'seg_n_dirss.pkl']):
+            fn = os.path.join(pro_data_dir, fn)
+            with open(fn, 'wb') as f:
+                pickle.dump(dirss, f)
+
+#    ## get img dirs with matching img and pn seg
+#    if tumor_type == 'primary_node':
+#        excludes = exclude_pn
+#        img_dirss_ = []
+#        for img_dirs in img_dirss:
+#            img_dirs_ = []
+#            for img_dir in img_dirs:
+#                fn = img_dir.split('/')[-1].split('_')[0]
+#                if fn not in excludes:
+#                    #print(fn)
+#                    img_dirs_.append(img_dir)
+#            img_dirss_.append(img_dirs_)
+#        seg_pn_dirss_ = []
+#        for seg_pn_dirs in seg_pn_dirss:
+#            seg_pn_dirs_ = []
+#            for seg_pn_dir in seg_pn_dirs:
+#                fn = seg_pn_dir.split('/')[-1].split('_')[0]
+#                if fn not in excludes:
+#                    #print(fn)
+#                    seg_pn_dirs_.append(seg_pn_dir)
+#            seg_pn_dirss_.append(seg_pn_dirs_)
+#    img_dirss = img_dirss_
+#    seg_pn_dirss = seg_pn_dirss_
+#    print(len(img_dirss[1]))
+#    print(len(seg_pn_dirss[1]))
+
+#    # save lists of dirs to pickle
+#    for dirss, fn in zip([img_dirss, seg_pn_dirss], 
+#                         ['img_dirss.pkl', 'seg_pn_dirss.pkl']):
+#        fn = os.path.join(pro_data_dir, fn)
+#        with open(fn, 'wb') as f:
+#            pickle.dump(dirss, f)
+#    print('successfully save all data dir!')
+    

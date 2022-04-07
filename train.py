@@ -35,11 +35,12 @@ def train(output_dir, pro_data_dir, log_dir, cox_model, epochs, dl_train, dl_tun
         df_tune=df_tune,
         dl_tune_cb=dl_tune_cb)
     # early stopping with c-index
+    saved_cpt = os.path.join(log_dir, 'cpt_weights.pt')
     early_stopping = tt.callbacks.EarlyStopping(
         get_score=concordance.get_last_score,
         minimize=False,
-        patience=10,
-        file_path=log_dir)
+        patience=200,
+        file_path=saved_cpt)
     #callbacks = [concordance, early_stopping, LRScheduler]
     callbacks = [concordance, early_stopping]
 

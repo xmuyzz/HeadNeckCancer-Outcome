@@ -10,7 +10,7 @@ from get_data.respacing import respacing
 
 
 
-def prepro_img(img_dir, seg_dir, new_spacing, norm_type, input_type, input_channel, 
+def prepro_img(img_dir, seg_dir, new_spacing, norm_type, input_img_type, input_channel, 
                d_max=70, h_max=70, w_max=70, padding=True, do_respacing=True):
 
     """
@@ -27,10 +27,9 @@ def prepro_img(img_dir, seg_dir, new_spacing, norm_type, input_type, input_chann
         Preprocessed images in nii.gz or np.array formats;
 
     """
-    
 
-    """respacing images and segmentations from (1, 1, 3) to (2, 2, 2)      
-    """
+    # respacing images and segmentations from (1, 1, 3) to (2, 2, 2)      
+    #---------------------------------------------------------------
     if do_respacing:
         # respacing for image
         img_arr = respacing(
@@ -56,8 +55,8 @@ def prepro_img(img_dir, seg_dir, new_spacing, norm_type, input_type, input_chann
         seg_nrrd = sitk.ReadImage(seg_dir)
         seg_arr = sitk.GetArrayFromImage(seg_nrrd)
 
-    """normalize CT image
-    """
+    # normalize CT image
+    #-------------------
     data = img_arr
     data[data <= -1024] = -1024
     # strip skull, skull UHI = ~700
@@ -70,25 +69,24 @@ def prepro_img(img_dir, seg_dir, new_spacing, norm_type, input_type, input_chann
         MAX, MIN = data.max(), data.min()
         norm_img = (data - MIN) / (MAX - MIN)
 
-    """apply mask to image
-    """
+    # apply mask to image
+    #--------------------
     masked_arr = np.where(seg_arr==1, norm_img, seg_arr)
     #masked_arr = norm_img * seg_arr
     
-    """get 3d bounding box
-    """
+    # get 3d bounding box
+    #--------------------
     dmin, dmax, hmin, hmax, wmin, wmax = get_bbox_3D(masked_arr)
     # choose masked image or whole image in bbox
-    if input_type == 'masked_img':
+    if input_img_type == 'masked_img':
         img_bbox = masked_arr[dmin:dmax+1, hmin:hmax+1, wmin:wmax+1]
-    elif input_type == 'raw_img':
+    elif input_img_type == 'raw_img':
         img_bbox = img_arr[dmin:dmax+1, hmin:hmax+1, wmin:wmax+1]
     #print('masked_arr:', masked_arr.shape)
     #print('img_bbox:', img_bbox.shape)
     
-    
-    """padding to match max bbox
-    """
+    # padding to match max bbox
+    #--------------------------
     if padding:
         d_pad = d_max - img_bbox.shape[0]
         h_pad = h_max - img_bbox.shape[1]

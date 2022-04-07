@@ -5,7 +5,7 @@ import torch
 import random
 from data_loader_transform import data_loader_transform
 from train import train
-from evaluate import evaluate
+from test import test
 from get_cnn_model import get_cnn_model
 from get_cox_model import get_cox_model
 from opts import parse_opts
@@ -35,40 +35,55 @@ if __name__ == '__main__':
             pro_data_dir=opt.pro_data_dir, 
             batch_size=opt.batch_size, 
             _cox_model=opt.cox_model_name, 
-            num_durations=opt.num_durations)
+            num_durations=opt.num_durations,
+            _outcome_model=opt._outcome_model,
+            tumor_type=opt.tumor_type,
+            input_data_type=opt.input_data_type,
+            i_kfold=opt.i_kfold)
     else:
         dl_train, dl_tune, dl_val = data_loader2(
             pro_data_dir=opt.pro_data_dir,
             batch_size=opt.batch_size,
             _cox_model=opt.cox_model_name,
             num_durations=opt.num_durations)
-    
-    cnns = ['resnet101']
-    #cnns = ['resnet18', 'resnet34', 'resnet50', 'resnet152', 'resnet200']
-    for cnn_name in cnns:   
-        cnn_model = get_cnn_model(
+   
+    if opt.train:
+        cnns = ['resnet101']
+        #cnns = ['resnet18', 'resnet34', 'resnet50', 'resnet152', 'resnet200']
+        for cnn_name in cnns:   
+            cnn_model = get_cnn_model(
+                cnn_name=cnn_name, 
+                n_classes=opt.num_durations, 
+                in_channels=opt.in_channels)
+            cox_model = get_cox_model(
+                pro_data_dir=opt.pro_data_dir,
+                cnn_model=cnn_model,
+                cox_model_name=opt.cox_model_name,
+                lr=opt.lr)
+            for epoch in [200]:
+                #for lr in [0.01, 0.0001, 0.00001, 0.1]:
+                for lr in [0.001]:
+                    train(
+                        output_dir=opt.output_dir,
+                        pro_data_dir=opt.pro_data_dir,
+                        log_dir=opt.log_dir,
+                        cox_model=cox_model,
+                        epochs=epoch,
+                        dl_train=dl_train,
+                        dl_tune=dl_tune,
+                        dl_val=dl_val,
+                        dl_tune_cb=dl_tune_cb,
+                        df_tune=df_tune,
+                        cnn_name=opt.cnn_name,
+                        lr=lr)
+    if opt.test:
+        test(
+            pro_data_dir=opt.pro_data_dir, 
+            output_dir=opt.output_dir, 
+            cox_model=cox_model, 
+            load_model=opt.load_model, 
+            dl_val=dl_val, 
+            score_type=opt.score_type,
             cnn_name=opt.cnn_name, 
-            n_classes=opt.num_durations, 
-            in_channels=opt.in_channels)
-        cox_model = get_cox_model(
-            pro_data_dir=opt.pro_data_dir,
-            cnn_model=cnn_model,
-            cox_model_name=opt.cox_model_name,
+            epochs=opt.epoch,  
             lr=opt.lr)
-        for epoch in [100]:
-            #for lr in [0.01, 0.0001, 0.00001, 0.1]:
-            for lr in [0.001]:
-                train(
-                    output_dir=opt.output_dir,
-                    pro_data_dir=opt.pro_data_dir,
-                    log_dir=opt.log_dir,
-                    cox_model=cox_model,
-                    epochs=epoch,
-                    dl_train=dl_train,
-                    dl_tune=dl_tune,
-                    dl_val=dl_val,
-                    dl_tune_cb=dl_tune_cb,
-                    df_tune=df_tune,
-                    cnn_name=opt.cnn_name,
-                    lr=lr)
-

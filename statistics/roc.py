@@ -12,19 +12,17 @@ from time import localtime, strftime
 from sklearn.utils import resample
 import scipy.stats as ss
 
-def mean_CI(data):
 
+def mean_CI(data):
     """
     Calculate mean value and 95% CI
     """
-
     mean = np.mean(np.array(data))
     CI = ss.t.interval(
         alpha=0.95,
         df=len(data)-1,
         loc=np.mean(data),
-        scale=ss.sem(data)
-        )
+        scale=ss.sem(data))
     lower = CI[0]
     upper = CI[1]
 
@@ -104,8 +102,7 @@ def roc(proj_dir, surv_fn, hpv, n_bs):
     death_score = [1 - s for s in df['score']]
     fpr, tpr, threshold = roc_curve(
         df['event'], 
-        death_score
-        )
+        death_score)
     roc_auc = auc(fpr, tpr)
     roc_auc = np.around(roc_auc, 3)
     print('ROC AUC:', roc_auc)
@@ -154,8 +151,7 @@ def roc(proj_dir, surv_fn, hpv, n_bs):
              'tpr' : pd.Series(tpr, index=q),
              'tnr' : pd.Series(1 - fpr, index=q),
              'tf'  : pd.Series(tpr - (1 - fpr), index=q),
-             'thre': pd.Series(thre, index=q)}
-             )
+             'thre': pd.Series(thre, index=q)})
         ### calculate optimal TPR, TNR under uden index
         roc_opt = roc.loc[(roc['tpr'] - roc['fpr']).idxmax(),:]
         AUC.append(roc_auc_score(y_true[indices], y_pred[indices]))
@@ -172,8 +168,7 @@ def roc(proj_dir, surv_fn, hpv, n_bs):
     stat_roc = pd.DataFrame(
         [AUCs, TPRs, TNRs, THREs],
         columns=['mean', '95% CI -', '95% CI +'],
-        index=['AUC', 'TPR', 'TNR', 'THRE']
-        )
+        index=['AUC', 'TPR', 'TNR', 'THRE'])
     print(stat_roc)
 
 
@@ -190,8 +185,7 @@ if __name__ == '__main__':
             proj_dir=proj_dir, 
             surv_fn=surv_fn, 
             hpv=hpv, 
-            n_bs=n_bs
-            )
+            n_bs=n_bs)
 
 
 

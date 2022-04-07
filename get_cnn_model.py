@@ -6,7 +6,7 @@ from models import cnn, resnet
 
 
 
-def get_cnn_model(cnn_name, n_classes, in_channels):
+def get_cnn_model(cnn_name, model_depth, n_classes, in_channels):
  
     if cnn_name == 'cnn':
         """
@@ -15,7 +15,7 @@ def get_cnn_model(cnn_name, n_classes, in_channels):
         print(cnn_name)
         model = cnn3d()
 
-    elif cnn_name[:6] == 'resnet':
+    elif cnn_name == 'resnet':
         """
         3D resnet with different depths
         model_depth = [10, 18, 34, 50, 101, 152, 200]
