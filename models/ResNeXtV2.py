@@ -6,7 +6,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .resnet import conv1x1x1, Bottleneck, ResNet
-from utils import partialclass
+
+from functools import partialmethod
+
+
+def partialclass(cls, *args, **kwargs):
+
+    class PartialClass(cls):
+        __init__ = partialmethod(cls.__init__, *args, **kwargs)
+
+    return PartialClass
 
 
 def get_inplanes():
@@ -59,16 +68,16 @@ def generate_model(model_depth, **kwargs):
     assert model_depth in [50, 101, 152, 200]
 
     if model_depth == 50:
-        model = ResNeXt(ResNeXtBottleneck, [3, 4, 6, 3], get_inplanes(),
+        model = ResNeXt(ResNeXtBottleneck, [3, 4, 6, 3],
                         **kwargs)
     elif model_depth == 101:
-        model = ResNeXt(ResNeXtBottleneck, [3, 4, 23, 3], get_inplanes(),
+        model = ResNeXt(ResNeXtBottleneck, [3, 4, 23, 3],
                         **kwargs)
     elif model_depth == 152:
-        model = ResNeXt(ResNeXtBottleneck, [3, 8, 36, 3], get_inplanes(),
+        model = ResNeXt(ResNeXtBottleneck, [3, 8, 36, 3],
                         **kwargs)
     elif model_depth == 200:
-        model = ResNeXt(ResNeXtBottleneck, [3, 24, 36, 3], get_inplanes(),
+        model = ResNeXt(ResNeXtBottleneck, [3, 24, 36, 3],
                         **kwargs)
 
     return model

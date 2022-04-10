@@ -22,6 +22,7 @@ from pycox.models import DeepHitSingle
 from pycox.utils import kaplan_meier
 
 
+
 def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
 
     """
@@ -39,6 +40,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
     """
 
     duration_index = np.load(os.path.join(pro_data_dir, 'duration_index.npy'))
+    optimizer=torch.optim.Adam(cnn_model.parameters(), lr=lr)
 
     if cox_model_name == 'PCHazard':
         """
@@ -49,7 +51,8 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
         """
         cox_model = PCHazard(
             net=cnn_model,
-            optimizer=tt.optim.Adam(lr),
+            #optimizer=tt.optim.Adam(lr),
+            optimizer=optimizer,
             duration_index=duration_index
             )
     elif cox_model_name == 'LogisticHazard':
@@ -60,7 +63,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
         """
         cox_model = LogisticHazard(
             net=cnn_model,
-            optimizer=tt.optim.Adam(lr),
+            optimizer=optimizer,
             duration_index=duration_index
             )
     elif cox_model_name == 'DeepHitSingle':
@@ -70,7 +73,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
         """
         cox_model = DeepHitSingle(
             net=cnn_model, 
-            optimizer=tt.optim.Adam(lr),
+            optimizer=optimizer,
             alpha=0.2, 
             sigma=0.1, 
             duration_index=duration_index
@@ -81,7 +84,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
         """
         cox_model = CoxPH(
             net=cnn_model,
-            optimizer=tt.optim.Adam(lr)
+            optimizer=optimizer
             )
     else:
         print('please select other cox models!')

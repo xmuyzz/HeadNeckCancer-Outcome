@@ -16,8 +16,7 @@ __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
 class Fire(nn.Module):
 
-    def __init__(self, inplanes, squeeze_planes,
-                 expand1x1_planes, expand3x3_planes,
+    def __init__(self, inplanes, squeeze_planes, expand1x1_planes, expand3x3_planes,
                  use_bypass=False):
         super(Fire, self).__init__()
         self.use_bypass = use_bypass
@@ -57,7 +56,8 @@ class SqueezeNet(nn.Module):
                  sample_size,
                  sample_duration,			
     	         version=1.1,
-    	         num_classes=600):
+    	         num_classes=600,
+                 in_channels=1):
         super(SqueezeNet, self).__init__()
         if version not in [1.0, 1.1]:
             raise ValueError("Unsupported SqueezeNet version {version}:"
@@ -67,7 +67,7 @@ class SqueezeNet(nn.Module):
         last_size = int(math.ceil(sample_size / 32))
         if version == 1.0:
             self.features = nn.Sequential(
-                nn.Conv3d(3, 96, kernel_size=7, stride=(1,2,2), padding=(3,3,3)),
+                nn.Conv3d(in_channels, 96, kernel_size=7, stride=(1,2,2), padding=(3,3,3)),
                 nn.BatchNorm3d(96),
                 nn.ReLU(inplace=True),
                 nn.MaxPool3d(kernel_size=3, stride=2, padding=1),
@@ -85,7 +85,7 @@ class SqueezeNet(nn.Module):
             )
         if version == 1.1:
             self.features = nn.Sequential(
-                nn.Conv3d(3, 64, kernel_size=3, stride=(1,2,2), padding=(1,1,1)),
+                nn.Conv3d(in_channels, 64, kernel_size=3, stride=(1,2,2), padding=(1,1,1)),
                 nn.BatchNorm3d(64),
                 nn.ReLU(inplace=True),
                 nn.MaxPool3d(kernel_size=3, stride=2, padding=1),
@@ -155,7 +155,7 @@ def get_model(**kwargs):
 
 
 if __name__ == '__main__':
-    model = SqueezeNet(version=1.1, sample_size = 112, sample_duration = 16, num_classes=600)
+    model = SqueezeNet(version=1.1, sample_size=96, sample_duration=16, num_classes=600, in_channels=1)
     model = model.cuda()
     model = nn.DataParallel(model, device_ids=None)
     print(model)
@@ -163,3 +163,7 @@ if __name__ == '__main__':
     input_var = Variable(torch.randn(8, 3, 16, 112, 112))
     output = model(input_var)
     print(output.shape)
+
+
+
+

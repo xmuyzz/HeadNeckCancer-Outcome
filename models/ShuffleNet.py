@@ -40,13 +40,13 @@ class Bottleneck(nn.Module):
         if self.stride == 2:
             out_planes = out_planes - in_planes
         g = 1 if in_planes==24 else groups
-        self.conv1    = nn.Conv3d(in_planes, mid_planes, kernel_size=1, groups=g, bias=False)
-        self.bn1      = nn.BatchNorm3d(mid_planes)
-        self.conv2    = nn.Conv3d(mid_planes, mid_planes, kernel_size=3, stride=stride, padding=1, groups=mid_planes, bias=False)
-        self.bn2      = nn.BatchNorm3d(mid_planes)
-        self.conv3    = nn.Conv3d(mid_planes, out_planes, kernel_size=1, groups=groups, bias=False)
-        self.bn3      = nn.BatchNorm3d(out_planes)
-        self.relu     = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv3d(in_planes, mid_planes, kernel_size=1, groups=g, bias=False)
+        self.bn1 = nn.BatchNorm3d(mid_planes)
+        self.conv2 = nn.Conv3d(mid_planes, mid_planes, kernel_size=3, stride=stride, padding=1, groups=mid_planes, bias=False)
+        self.bn2 = nn.BatchNorm3d(mid_planes)
+        self.conv3 = nn.Conv3d(mid_planes, out_planes, kernel_size=1, groups=groups, bias=False)
+        self.bn3 = nn.BatchNorm3d(out_planes)
+        self.relu = nn.ReLU(inplace=True)
 
         if stride == 2:
             self.shortcut = nn.AvgPool3d(kernel_size=(2,3,3), stride=2, padding=(0,1,1))
@@ -67,10 +67,7 @@ class Bottleneck(nn.Module):
 
 
 class ShuffleNet(nn.Module):
-    def __init__(self,
-                 groups,
-                 width_mult=1,
-                 num_classes=400):
+    def __init__(self, groups, width_mult=1, num_classes=400, in_channels=1):
         super(ShuffleNet, self).__init__()
         self.num_classes = num_classes
         self.groups = groups
@@ -94,7 +91,7 @@ class ShuffleNet(nn.Module):
                    1x1 Grouped Convolutions""".format(num_groups))
         out_planes = [int(i * width_mult) for i in out_planes]
         self.in_planes = out_planes[0]
-        self.conv1   = conv_bn(3, self.in_planes, stride=(1,2,2))
+        self.conv1   = conv_bn(in_channels, self.in_planes, stride=(1,2,2))
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
         self.layer1  = self._make_layer(out_planes[1], num_blocks[0], self.groups)
         self.layer2  = self._make_layer(out_planes[2], num_blocks[1], self.groups)
@@ -156,7 +153,7 @@ def get_model(**kwargs):
 
 
 if __name__ == "__main__":
-    model = get_model(groups=3, num_classes=600, width_mult=1)
+    model = get_model(groups=3, num_classes=600, width_mult=1, in_channels=1)
     model = model.cuda()
     model = nn.DataParallel(model, device_ids=None)
     print(model)

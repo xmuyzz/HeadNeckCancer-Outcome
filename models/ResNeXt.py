@@ -89,11 +89,12 @@ class ResNeXt(nn.Module):
                  sample_duration,
                  shortcut_type='B',
                  cardinality=32,
-                 num_classes=400):
+                 n_classes=400,
+                 in_channels=1):
         self.inplanes = 64
         super(ResNeXt, self).__init__()
         self.conv1 = nn.Conv3d(
-            3,
+            in_channels,
             64,
             kernel_size=7,
             stride=(1, 2, 2),
@@ -122,7 +123,7 @@ class ResNeXt(nn.Module):
         last_size = int(math.ceil(sample_size / 32))
         self.avgpool = nn.AvgPool3d(
             (last_duration, last_size, last_size), stride=1)
-        self.fc = nn.Linear(cardinality * 32 * block.expansion, num_classes)
+        self.fc = nn.Linear(cardinality * 32 * block.expansion, n_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
@@ -204,22 +205,22 @@ def get_fine_tuning_parameters(model, ft_portion):
         raise ValueError("Unsupported ft_portion: 'complete' or 'last_layer' expected")
 
 
-def resnext50(**kwargs):
-    """Constructs a ResNet-50 model.
-    """
-    model = ResNeXt(ResNeXtBottleneck, [3, 4, 6, 3], **kwargs)
+def generate_model(model_depth, **kwargs):
+    
+    assert model_depth in [50, 101, 152, 200]
+
+    if model_depth == 50:
+        model = ResNeXt(ResNeXtBottleneck, [3, 4, 6, 3], **kwargs)
+
+    elif model_depth == 101:
+        model = ResNeXt(ResNeXtBottleneck, [3, 4, 23, 3], **kwargs)
+
+    elif model_depth == 152:
+        model = ResNeXt(ResNeXtBottleneck, [3, 8, 36, 3], **kwargs)
+
+    elif model_depth == 200:
+        model = ResNeXt(ResNeXtBottleneck, [3, 24, 36, 3], **kwargs)
+
     return model
 
 
-def resnext101(**kwargs):
-    """Constructs a ResNet-101 model.
-    """
-    model = ResNeXt(ResNeXtBottleneck, [3, 4, 23, 3], **kwargs)
-    return model
-
-
-def resnext152(**kwargs):
-    """Constructs a ResNet-101 model.
-    """
-    model = ResNeXt(ResNeXtBottleneck, [3, 8, 36, 3], **kwargs)
-    return model

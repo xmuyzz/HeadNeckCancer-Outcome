@@ -9,7 +9,7 @@ class WideBottleneck(resnet.Bottleneck):
     expansion = 2
 
 
-def generate_model(model_depth, k, **kwargs):
+def generate_model(model_depth, k=2, **kwargs):
     assert model_depth in [50, 101, 152, 200]
 
     inplanes = [x * k for x in resnet.get_inplanes()]
@@ -20,7 +20,6 @@ def generate_model(model_depth, k, **kwargs):
     elif model_depth == 152:
         model = resnet.ResNet(WideBottleneck, [3, 8, 36, 3], inplanes, **kwargs)
     elif model_depth == 200:
-        model = resnet.ResNet(WideBottleneck, [3, 24, 36, 3], inplanes,
-                              **kwargs)
+        model = resnet.ResNet(WideBottleneck, [3, 24, 36, 3], inplanes, **kwargs)
 
     return model

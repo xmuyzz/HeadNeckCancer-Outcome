@@ -82,7 +82,7 @@ class DenseNet(nn.Module):
     """
 
     def __init__(self,
-                 n_input_channels=3,
+                 n_input_channels=1,
                  conv1_t_size=7,
                  conv1_t_stride=1,
                  no_max_pool=False,
@@ -185,3 +185,10 @@ def generate_model(model_depth, **kwargs):
                          **kwargs)
 
     return model
+
+
+
+
+
+
+

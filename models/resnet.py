@@ -248,3 +248,7 @@ def generate_model(model_depth, **kwargs):
         model = ResNet(Bottleneck, [3, 24, 36, 3], get_inplanes(), **kwargs)
 
     return model
+
+
+
+

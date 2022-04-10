@@ -18,31 +18,52 @@ from pycox.evaluation import EvalSurv
 from pycox.models import CoxPH, PCHazard, LogisticHazard, DeepHitSingle
 from pycox.utils import kaplan_meier
 from callbacks import Concordance, LRScheduler
+from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ReduceLROnPlateau
 
 
-
-def train(output_dir, pro_data_dir, log_dir, cox_model, epochs, dl_train, dl_tune, dl_val, 
-          dl_tune_cb, df_tune, cnn_name, lr, save_model='model', use_ci_cb=True):
+def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, epochs, dl_train, 
+          dl_tune, dl_val, dl_tune_cb, df_tune, cnn_name, model_depth, lr, save_model='model',
+          scheduler_type='lambda'):
     
     # load model
     model = cox_model
 
     # choose callback functions
-    # metric monitor with c-index
+    #---------------------------
+    # callback: LR scheduler
+    lambda1 = lambda epoch: 0.9 ** (epoch // 50)
+    optimizer = torch.optim.Adam(cnn_model.parameters(), lr=lr)
+    if scheduler_type == 'lambda':
+        scheduler = LambdaLR(
+            optimizer, 
+            lr_lambda=[lambda1])
+    elif scheduler_type == 'plateau':
+        scheduler = ReduceLROnPlateau(
+            optimizer, 
+            mode='min',
+            factor=0.1, 
+            patience=10, 
+            threshold=0.0001, 
+            threshold_mode='abs')
+    lr_scheduler = LRScheduler(scheduler)
+
+    # callback: metric monitor with c-index
     concordance = Concordance(
         save_dir=log_dir,
         run='os',
         df_tune=df_tune,
         dl_tune_cb=dl_tune_cb)
-    # early stopping with c-index
+
+    # callback: early stopping with c-index
     saved_cpt = os.path.join(log_dir, 'cpt_weights.pt')
     early_stopping = tt.callbacks.EarlyStopping(
         get_score=concordance.get_last_score,
         minimize=False,
         patience=200,
         file_path=saved_cpt)
-    #callbacks = [concordance, early_stopping, LRScheduler]
-    callbacks = [concordance, early_stopping]
+    
+    callbacks = [concordance, early_stopping, lr_scheduler]
+    #callbacks = [concordance, early_stopping]
 
     # fit model
     log = model.fit_dataloader(
@@ -55,14 +76,14 @@ def train(output_dir, pro_data_dir, log_dir, cox_model, epochs, dl_train, dl_tun
     # save model training curves
     plot = log.plot()
     fig = plot.get_figure()
-    log_fn = str(cnn_name) + '_' + str(epochs) + '_' + \
+    log_fn = str(cnn_name) + str(model_depth) + '_' + str(epochs) + '_' + \
          str(lr) + '_' + 'log.png'
     fig.savefig(os.path.join(output_dir, log_fn))
     print('saved train acc and loss curves!')
     
     # survival prediction
     surv = cox_model.predict_surv_df(dl_val)
-    fn_surv = str(cnn_name) + '_' + str(epochs) + '_' + \
+    fn_surv = str(cnn_name) + str(model_depth) + '_' + str(epochs) + '_' + \
               str(lr) + '_' + 'surv.csv'
     surv.to_csv(os.path.join(pro_data_dir, fn_surv), index=False)
     # C-index
@@ -80,14 +101,14 @@ def train(output_dir, pro_data_dir, log_dir, cox_model, epochs, dl_train, dl_tun
     # save trained model
     if save_model == 'model':
         # save the whole network
-        model_fn = str(cnn_name) + '_' + str(epochs) + '_' + \
+        model_fn = str(cnn_name) + str(model_depth) + '_' + str(epochs) + '_' + \
                    str(lr) + '_' + 'model.pt'
-        model.save_net(os.path.join(pro_data_dir, model_fn))
+        model.save_net(os.path.join(model_dir, model_fn))
     elif save_model == 'weights':
         # only store weights
-        weights_fn = str(cnn_name) + '_' + str(epochs) + '_' + \
+        weights_fn = str(cnn_name) + str(model_depth) + '_' + str(epochs) + '_' + \
                      str(lr) + '_' + 'weights.pt'
-        model.save_model_weights(os.path.join(pro_data_dir, weights_fn))
+        model.save_model_weights(os.path.join(model_dir, weights_fn))
     print('saved trained model and weights!')
 
     # write txt files
@@ -104,6 +125,8 @@ def train(output_dir, pro_data_dir, log_dir, cox_model, epochs, dl_train, dl_tun
         f.write('\n')
         f.close()
     print('successfully save train logs.')
+
+
 
 
 if __name__ == '__main__':

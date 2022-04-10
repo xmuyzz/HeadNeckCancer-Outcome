@@ -32,7 +32,7 @@ def parse_opts():
 
     # train model
     parser.add_argument('--tumor_type', default='primary_node', type=str, help='(primary_node|primary|node')
-    parser.add_argument('--input_data_type', default='raw_img', type=str, help='(masked_img|raw_img')
+    parser.add_argument('--input_data_type', default='masked_img', type=str, help='(masked_img|raw_img')
     parser.add_argument('--i_kfold', default=0, type=int, help='(0|1|2|3|4)')
     parser.add_argument('--cnn_name', default='resnet101', type=str, help='resnet (18|34|50|152|200)')
     parser.add_argument('--cox_model_name', default='LogisticHazard', type=str, help='cox model')
