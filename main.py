@@ -12,9 +12,9 @@ from opts import parse_opts
 from get_data.data_loader2 import data_loader2
 
 
-if __name__ == '__main__':
 
-    opt = parse_opts()
+def main(opt):
+
     random.seed(opt.manual_seed)
     np.random.seed(opt.manual_seed)
     torch.manual_seed(opt.manual_seed)
@@ -24,6 +24,9 @@ if __name__ == '__main__':
         opt.pro_data_dir = os.path.join(opt.proj_dir, opt.pro_data)
         opt.log_dir = os.path.join(opt.proj_dir, opt.log)
         opt.model_dir = os.path.join(opt.proj_dir, opt.model)
+        opt.train_dir = os.path.join(opt.proj_dir, opt.train_folder)
+        opt.val_dir = os.path.join(opt.proj_dir, opt.val_folder)
+        opt.test_dir = os.path.join(opt.proj_dir, opt.test_folder)
         if not os.path.exists(opt.output_dir):
             os.makedirs(opt.output_dir)
         if not os.path.exists(opt.pro_data_dir):
@@ -32,6 +35,12 @@ if __name__ == '__main__':
             os.makedirs(opt.log_dir)
         if not os.path.exists(opt.model_dir):
             os.makedirs(opt.model_dir)
+        if not os.path.exists(opt.train_dir):
+            os.makedirs(opt.train_dir)
+        if not os.path.exists(opt.val_dir):
+            os.makedirs(opt.val_dir)
+        if not os.path.exists(opt.test_dir):
+            os.makedirs(opt.test_dir)
 
     if opt.augmentation:
         dl_train, dl_tune, dl_val, dl_test, dl_tune_cb, df_tune = data_loader_transform(
@@ -55,14 +64,13 @@ if __name__ == '__main__':
         CNN Models
         Implemented:
             MobileNetV2, MobileNet, ResNet, ResNetV2, WideResNet, 
-            ShuffleNet, ShuffleNetV2, DenseNet
+            ShuffleNet, ShuffleNetV2, DenseNet, EfficientNet(b0-b9),
         Not working:
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
-
         """
 
-        cnns = ['PreActResNet']
-        model_depth = 50
+        cnns = ['DenseNet']
+        model_depth = 121
         for cnn_name in cnns:   
             if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
                 assert model_depth in [10, 18, 34, 50, 152, 200]
@@ -82,7 +90,7 @@ if __name__ == '__main__':
                 cnn_model=cnn_model,
                 cox_model_name=opt.cox_model_name,
                 lr=opt.lr)
-            for epoch in [50]:
+            for epoch in [20]:
                 for lr in [0.001]:
                     train(
                         output_dir=opt.output_dir,
@@ -98,8 +106,10 @@ if __name__ == '__main__':
                         dl_val=dl_val,
                         dl_tune_cb=dl_tune_cb,
                         df_tune=df_tune,
-                        cnn_name=opt.cnn_name,
-                        lr=lr)
+                        cnn_name=cnn_name,
+                        lr=lr,
+                        target_c_index=0.7,
+                        eval_model='best_model')
     if opt.test:
         test(
             pro_data_dir=opt.pro_data_dir, 
@@ -111,3 +121,12 @@ if __name__ == '__main__':
             cnn_name=opt.cnn_name, 
             epochs=opt.epoch,  
             lr=opt.lr)
+
+
+if __name__ == '__main__':
+
+    opt = parse_opts()
+
+    main(opt)
+
+

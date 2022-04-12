@@ -12,11 +12,11 @@ def parse_opts():
     parser.add_argument('--label', default='label', type=str, help='Label path')
     parser.add_argument('--output', default='output', type=str, help='Results output path')
     parser.add_argument('--pro_data', default='pro_data', type=str, help='Processed data path')
-    parser.add_argument('--model', default='output/model', type=str, help='Results output path')
-    parser.add_argument('--log', default='output/log', type=str, help='Log data path')
-    parser.add_argument('--train_dir', default='output/train', type=str, help='Train results path')
-    parser.add_argument('--val_dir', default='output/val', type=str, help='Validation results path')
-    parser.add_argument('--test_dir', default='output/test', type=str, help='Test results path')
+    parser.add_argument('--model', default='model', type=str, help='Results output path')
+    parser.add_argument('--log', default='log', type=str, help='Log data path')
+    parser.add_argument('--train_folder', default='train', type=str, help='Train results path')
+    parser.add_argument('--val_folder', default='val', type=str, help='Validation results path')
+    parser.add_argument('--test_folder', default='test', type=str, help='Test results path')
     
     # data preprocessing
     parser.add_argument('--_outcome_model', default='overall_survival', type=str, 

@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-
 from .utils import (
     round_filters,
     round_repeats,
@@ -12,6 +11,8 @@ from .utils import (
     Swish,
     MemoryEfficientSwish,
 )
+
+
 
 class MBConvBlock3D(nn.Module):
     """
@@ -97,7 +98,7 @@ class MBConvBlock3D(nn.Module):
         self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
 
 
-class EfficientNet3D(nn.Module):
+class EfficientNet(nn.Module):
     """
     An EfficientNet model. Most easily loaded with the .from_name or .from_pretrained methods
 
@@ -110,7 +111,7 @@ class EfficientNet3D(nn.Module):
 
     """
 
-    def __init__(self, blocks_args=None, global_params=None, in_channels=3):
+    def __init__(self, blocks_args=None, global_params=None, in_channels=1):
         super().__init__()
         assert isinstance(blocks_args, list), 'blocks_args should be a list'
         assert len(blocks_args) > 0, 'block args must be greater than 0'
@@ -185,7 +186,9 @@ class EfficientNet3D(nn.Module):
         return x
 
     def forward(self, inputs):
-        """ Calls extract_features to extract features, applies final linear layer, and returns logits. """
+        """ 
+        Calls extract_features to extract features, applies final linear layer, and returns logits. 
+        """
         bs = inputs.size(0)
         # Convolution layers
         x = self.extract_features(inputs)
@@ -212,7 +215,13 @@ class EfficientNet3D(nn.Module):
 
     @classmethod
     def _check_model_name_is_valid(cls, model_name):
-        """ Validates model name. """ 
-        valid_models = ['efficientnet-b'+str(i) for i in range(9)]
+        """ 
+        Validates model name. 
+        """ 
+        valid_models = ['efficientnet-b' + str(i) for i in range(9)]
         if model_name not in valid_models:
             raise ValueError('model_name should be one of: ' + ', '.join(valid_models))
+
+
+
+

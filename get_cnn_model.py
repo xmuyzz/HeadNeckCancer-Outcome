@@ -7,7 +7,22 @@ from models import (cnn, C3DNet, resnet, ResNetV2, ResNeXt, ResNeXtV2, WideResNe
 
 
 def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96):
- 
+    
+    """
+    generate CNN models
+
+    Args:
+        cnn_name {str} -- cnn model names;
+        model_depth {int} -- model depth number;
+        n_classes {int} -- number of output classes;
+        in_channels {int} -- image channels;
+        sample_size {int} -- image size;
+    Returns:
+        cnn model for train;
+
+    """
+
+
     # simple CNN 
     if cnn_name == 'cnn':
         """
@@ -178,8 +193,9 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
     elif cnn_name == 'EfficientNet':
         """
         EfficientNet
+        efficientnetb0, b1, ..., b9
         """
-        model = EfficientNet3D.from_name(
+        model = EfficientNet.EfficientNet.from_name(
             'efficientnet-b4', 
             override_params={'num_classes': n_classes}, 
             in_channels=in_channels)
