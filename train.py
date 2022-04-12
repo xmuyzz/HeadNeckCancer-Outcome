@@ -23,11 +23,10 @@ from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ReduceLROnPl
 
 
 def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, epochs, dl_train, 
-          dl_tune, dl_val, dl_tune_cb, df_tune, cnn_name, model_depth, lr, target_c_index,
+          dl_tune, dl_val, dl_tune_cb, df_tune, cnn_name, model_depth, lr, target_c_index=0.8,
           eval_model='best_model', scheduler_type='lambda', train_logs=True, plot_c_indices=True,
           fit_model=True):
     
-
     # choose callback functions
     #---------------------------
     # callback: LR scheduler
@@ -45,8 +44,10 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
             threshold_mode='abs')
     lr_scheduler = LRScheduler(scheduler)
     # callback: metric monitor with c-index
+    print(model_dir)
     concordance = Concordance(
-        save_dir=model_dir,
+        model_dir=model_dir,
+        log_dir=log_dir,
         df_tune=df_tune,
         dl_tune_cb=dl_tune_cb,
         target_c_index=target_c_index,
@@ -81,14 +82,16 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
     
     # evalute model on val data
     fn = str(cnn_name) + str(model_depth) + '_c_indexs.npy'
-    c_indexs = np.load(os.path.join(model_dir, fn))
+    c_indexs = np.load(os.path.join(log_dir, fn))
     print(c_indexs)
     if eval_model == 'best_model':
         c_index = np.amax(c_indexs)
-        fn = cnn_name + str(model_depth) + '_' + str(c_index) + '_final_model.pt'
+        fn = str(cnn_name) + str(model_depth) + '_' + str(c_index) + '_model.pt'
+        print(fn)
     elif eval_model == 'final_model':
         c_index = c_indexs[-1]
-        fn = cnn_name + str(model_depth) + '_' + str(c_index) + '_model.pt'
+        fn = str(cnn_name) + str(model_depth) + '_' + '_final_model.pt'
+        print(fn)
     cox_model.load_net(os.path.join(model_dir, fn))
     surv = cox_model.predict_surv_df(dl_val)
     fn_surv = cnn_name + str(model_depth) + str(c_index) + 'surv.csv'
@@ -111,8 +114,8 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         #ax.set_aspect('equal')
-        print('c_indexs:', c_indexs)
-        print('x:', x)
+        #print('c_indexs:', c_indexs)
+        #print('x:', x)
         plt.plot(c_indexs, color='red', linewidth=3, label='c-index')
         plt.xlim([0, epochs+1])
         plt.ylim([0, 1])
@@ -128,13 +131,13 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         plt.grid(True)
         plt.tight_layout(pad=1.08, h_pad=None, w_pad=None, rect=None)
         fn = cnn_name + str(model_depth) + '_c_index.png'
-        plt.savefig(os.path.join(output_dir, fn), format='png', dpi=600)
+        plt.savefig(os.path.join(log_dir, fn), format='png', dpi=600)
         plt.close()
 
     # write txt files
     if train_logs:
         log_fn = 'train_logs.text'
-        write_path = os.path.join(output_dir, log_fn)
+        write_path = os.path.join(log_dir, log_fn)
         with open(write_path, 'a') as f:
             f.write('\n-------------------------------------------------------------------')
             f.write('\ncreated time: %s' % strftime('%Y-%m-%d %H:%M:%S', localtime()))

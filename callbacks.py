@@ -23,10 +23,11 @@ class Concordance(tt.cb.MonitorMetrics):
 
     """
 
-    def __init__(self, save_dir, df_tune, dl_tune_cb, target_c_index, 
+    def __init__(self, model_dir, log_dir, df_tune, dl_tune_cb, target_c_index, 
                  cnn_name, model_depth, lr, per_epoch=1, verbose=True):
         super().__init__(per_epoch)
-        self.save_dir = save_dir
+        self.model_dir = model_dir
+        self.log_dir = log_dir
         self.verbose = verbose
         self.dl_tune_cb = dl_tune_cb
         self.df_tune = df_tune
@@ -55,7 +56,7 @@ class Concordance(tt.cb.MonitorMetrics):
         # save best models
         if c_index > self.target_c_index:
             fn = self.cnn_name + str(self.model_depth) + '_' + str(c_index) + '_model.pt'
-            self.model.save_net(os.path.join(self.save_dir + fn))
+            self.model.save_net(os.path.join(self.model_dir, fn))
             print('best c-index model:', fn)
     
     def get_last_score(self):
@@ -70,13 +71,13 @@ class Concordance(tt.cb.MonitorMetrics):
         c_index = np.amax(self.c_indexs)
         # save numpy array of c-indexs
         fn = self.cnn_name + str(self.model_depth) + '_c_indexs.npy'
-        np.save(os.path.join(self.save_dir, fn), self.c_indexs)
+        np.save(os.path.join(self.log_dir, fn), self.c_indexs)
         # save lrs
         fn = self.cnn_name + str(self.model_depth) + '_lrs.npy'
-        np.save(os.path.join(self.save_dir, fn), self.lrs)
+        np.save(os.path.join(self.log_dir, fn), self.lrs)
         # save final model
-        fn = self.cnn_name + str(self.model_depth) + '_' + str(c_index) + '_final_model.pt'
-        self.model.save_net(os.path.join(self.save_dir, fn))
+        fn = self.cnn_name + str(self.model_depth) + '_final_model.pt'
+        self.model.save_net(os.path.join(self.model_dir, fn))
 
 
 

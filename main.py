@@ -69,7 +69,7 @@ def main(opt):
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
 
-        cnns = ['DenseNet']
+        cnns = ['MobileNetV2']
         model_depth = 121
         for cnn_name in cnns:   
             if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
@@ -78,7 +78,8 @@ def main(opt):
                 assert model_depth in [50, 101, 152, 200]
             elif cnn_name in ['DenseNet']:
                 assert model_depth in [121, 169, 201]
-            else:
+            elif cnn_name in ['MobileNet', 'MobileNetV2', 'ShuffleNet', 
+                               'ShuffleNetV2', 'EfficientNet']:
                 model_depth = None
             cnn_model = get_cnn_model(
                 cnn_name=cnn_name,
@@ -91,7 +92,7 @@ def main(opt):
                 cox_model_name=opt.cox_model_name,
                 lr=opt.lr)
             for epoch in [20]:
-                for lr in [0.001]:
+                for lr in [0.01]:
                     train(
                         output_dir=opt.output_dir,
                         pro_data_dir=opt.pro_data_dir,
@@ -108,19 +109,19 @@ def main(opt):
                         df_tune=df_tune,
                         cnn_name=cnn_name,
                         lr=lr,
-                        target_c_index=0.7,
+                        target_c_index=0.75,
                         eval_model='best_model')
     if opt.test:
         test(
+            run_type=run_type,
+            model_dir=model_dir,
+            log_dir=log_dir,
             pro_data_dir=opt.pro_data_dir, 
-            output_dir=opt.output_dir, 
             cox_model=cox_model, 
-            load_model=opt.load_model, 
             dl_val=dl_val, 
-            score_type=opt.score_type,
-            cnn_name=opt.cnn_name, 
-            epochs=opt.epoch,  
-            lr=opt.lr)
+            dl_test=dl_test,
+            cnn_name=cnn_name, 
+            model_depth=model_depth)
 
 
 if __name__ == '__main__':
