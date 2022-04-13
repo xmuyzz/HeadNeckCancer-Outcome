@@ -110,12 +110,10 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
 
     # plot c-index
     if plot_c_indices:
-        x = np.arange(0, epochs+1, 1, dtype=int).tolist()
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         #ax.set_aspect('equal')
         #print('c_indexs:', c_indexs)
-        #print('x:', x)
         plt.plot(c_indexs, color='red', linewidth=3, label='c-index')
         plt.xlim([0, epochs+1])
         plt.ylim([0, 1])
@@ -123,8 +121,15 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         #ax.axhline(y=1.03, color='k', linewidth=4)
         #ax.axvline(x=-0.03, color='k', linewidth=4)
         #ax.axvline(x=1, color='k', linewidth=4)
-        plt.xticks(x, fontsize=16, fontweight='bold')
-        plt.yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0], fontsize=16, fontweight='bold')
+        if epochs < 20:
+            interval = 2
+        elif epochs > 20 and epoch < 50:
+            interval = 5
+        elif epochs > 50:
+            interval = 10
+        x = np.arange(0, epochs+1, interval, dtype=int).tolist()
+        plt.xticks(x, fontsize=12, fontweight='bold')
+        plt.yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0], fontsize=12, fontweight='bold')
         plt.xlabel('Epochs', fontweight='bold', fontsize=16)
         plt.ylabel('C-index', fontweight='bold', fontsize=16)
         plt.legend(loc='lower right', prop={'size': 16, 'weight': 'bold'})
