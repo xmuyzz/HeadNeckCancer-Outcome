@@ -69,51 +69,52 @@ def main(opt):
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
 
-        cnns = ['MobileNetV2']
-        model_depth = 121
+        cnns = ['DenseNet']
+        model_depths = [121, 169, 201]
         for cnn_name in cnns:   
-            if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
-                assert model_depth in [10, 18, 34, 50, 152, 200]
-            elif cnn_name in ['ResNeXt', 'ResNeXtV2', 'WideResNet']:
-                assert model_depth in [50, 101, 152, 200]
-            elif cnn_name in ['DenseNet']:
-                assert model_depth in [121, 169, 201]
-            elif cnn_name in ['MobileNet', 'MobileNetV2', 'ShuffleNet', 
-                               'ShuffleNetV2', 'EfficientNet']:
-                model_depth = None
-            cnn_model = get_cnn_model(
-                cnn_name=cnn_name,
-                model_depth=model_depth,
-                n_classes=opt.num_durations, 
-                in_channels=opt.in_channels)
-            cox_model = get_cox_model(
-                pro_data_dir=opt.pro_data_dir,
-                cnn_model=cnn_model,
-                cox_model_name=opt.cox_model_name,
-                lr=opt.lr)
-            for epoch in [20]:
-                for lr in [0.01]:
-                    train(
-                        output_dir=opt.output_dir,
-                        pro_data_dir=opt.pro_data_dir,
-                        log_dir=opt.log_dir,
-                        model_dir=opt.model_dir,
-                        cnn_model=cnn_model,
-                        model_depth=model_depth,
-                        cox_model=cox_model,
-                        epochs=epoch,
-                        dl_train=dl_train,
-                        dl_tune=dl_tune,
-                        dl_val=dl_val,
-                        dl_tune_cb=dl_tune_cb,
-                        df_tune=df_tune,
-                        cnn_name=cnn_name,
-                        lr=lr,
-                        target_c_index=0.75,
-                        eval_model='best_model')
+            for model_depth in model_depths:
+                if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
+                    assert model_depth in [10, 18, 34, 50, 152, 200]
+                elif cnn_name in ['ResNeXt', 'ResNeXtV2', 'WideResNet']:
+                    assert model_depth in [50, 101, 152, 200]
+                elif cnn_name in ['DenseNet']:
+                    assert model_depth in [121, 169, 201]
+                elif cnn_name in ['MobileNet', 'MobileNetV2', 'ShuffleNet', 
+                                   'ShuffleNetV2', 'EfficientNet']:
+                    model_depth = 0
+                cnn_model = get_cnn_model(
+                    cnn_name=cnn_name,
+                    model_depth=model_depth,
+                    n_classes=opt.num_durations, 
+                    in_channels=opt.in_channels)
+                cox_model = get_cox_model(
+                    pro_data_dir=opt.pro_data_dir,
+                    cnn_model=cnn_model,
+                    cox_model_name=opt.cox_model_name,
+                    lr=opt.lr)
+                for epoch in [100]:
+                    for lr in [0.0001]:
+                        train(
+                            output_dir=opt.output_dir,
+                            pro_data_dir=opt.pro_data_dir,
+                            log_dir=opt.log_dir,
+                            model_dir=opt.model_dir,
+                            cnn_model=cnn_model,
+                            model_depth=model_depth,
+                            cox_model=cox_model,
+                            epochs=epoch,
+                            dl_train=dl_train,
+                            dl_tune=dl_tune,
+                            dl_val=dl_val,
+                            dl_tune_cb=dl_tune_cb,
+                            df_tune=df_tune,
+                            cnn_name=cnn_name,
+                            lr=lr,
+                            target_c_index=0.75,
+                            eval_model='best_model')
     if opt.test:
         test(
-            run_type=run_type,
+            run_type=run_typ,
             model_dir=model_dir,
             log_dir=log_dir,
             pro_data_dir=opt.pro_data_dir, 

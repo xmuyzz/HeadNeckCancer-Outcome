@@ -196,7 +196,7 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
         efficientnetb0, b1, ..., b9
         """
         model = EfficientNet.EfficientNet.from_name(
-            'efficientnet-b4', 
+            'efficientnet-b0', 
             override_params={'num_classes': n_classes}, 
             in_channels=in_channels)
     
