@@ -69,7 +69,7 @@ def main(opt):
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
 
-        cnns = ['DenseNet']
+        cnns = ['MobileNetV2']
         model_depths = [121, 169, 201]
         for cnn_name in cnns:   
             for model_depth in model_depths:

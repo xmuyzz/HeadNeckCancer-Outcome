@@ -78,7 +78,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         plot = log.plot()
         fig = plot.get_figure()
         log_fn = str(cnn_name) + str(model_depth) + '_' + 'loss.png'
-        fig.savefig(os.path.join(output_dir, log_fn))
+        fig.savefig(os.path.join(log_dir, log_fn))
     
     # evalute model on val data
     fn = str(cnn_name) + str(model_depth) + '_c_indexs.npy'
@@ -123,7 +123,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         #ax.axvline(x=1, color='k', linewidth=4)
         if epochs < 20:
             interval = 2
-        elif epochs > 20 and epoch < 50:
+        elif epochs > 20 and epochs < 50:
             interval = 5
         elif epochs > 50:
             interval = 10

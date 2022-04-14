@@ -16,12 +16,14 @@ from pycox.datasets import metabric
 from pycox.evaluation import EvalSurv
 from pycox.models import PCHazard, CoxPH, LogisticHazard, DeepHitSingle
 from pycox.utils import kaplan_meier
+from pycox.models.data import pair_rank_mat, _pair_rank_mat
 import monai
 from monai.utils import first
 from monai.transforms import (AddChannel, AsChannelFirst, EnsureChannelFirst, RepeatChannel,
     ToTensor, RemoveRepeatedChannel, EnsureType, Compose, CropForeground, LoadImage,
     Orientation, RandSpatialCrop, Spacing, Resize, ScaleIntensity, RandRotate, RandZoom,
-    RandGaussianNoise, RandFlip, Rotate90, RandRotate90, EnsureType, RandAffine)
+    RandGaussianNoise, RandGaussianSharpen, RandGaussianSmooth, RandFlip, Rotate90, RandRotate90, 
+    EnsureType, RandAffine)
 
 
 def get_dataset(tumor_type, input_data_type):
@@ -155,12 +157,6 @@ def data_prep(pro_data_dir, batch_size, _cox_model, num_durations, _outcome_mode
     print('df_val shape:', df_val.shape)
     print('df_test shape:', df_test.shape)
 
-    """
-    The LogisticHazard is a discrete-time method, meaning it requires discretization 
-    of the event times to be applied to continuous-time data. 
-    We let num_durations define the size of this (equidistant) discretization grid, meaning our 
-    network will have num_durations output nodes.
-    """
     if _cox_model == 'PCHazard':
         labtrans = PCHazard.label_transform(num_durations)
     elif _cox_model == 'LogisticHazard':
@@ -231,18 +227,20 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
     # image transforma with MONAI
     train_transforms = Compose([
         #EnsureChannelFirst(),
-        ScaleIntensity(minv=0.0, maxv=1.0),
+        #ScaleIntensity(minv=0.0, maxv=1.0),
         #Resized(spatial_size=(96, 96, 96)),
         RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
-        RandAffine(prob=0.5, translate_range=10),
-        RandFlip(prob=0.1, spatial_axis=2),
-        #RandRotate90(prob=0.1, max_k=3, spatial_axes=(0, 1)),
+        RandGaussianSharpen(),
+        RandGaussianSmooth(),
+        #RandAffine(prob=0.5, translate_range=10),
+        RandFlip(prob=0.5, spatial_axis=None),
+        #RandRotate(prob=0.5, range_x=5, range_y=5, range_z=5),
         EnsureType(data_type='tensor')
         ])
     tune_transforms = Compose([
         #AddChannel,
         #EnsureChannelFirst(),
-        ScaleIntensity(minv=0.0, maxv=1.0),
+        #ScaleIntensity(minv=0.0, maxv=1.0),
         #RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
         #RandAffine(prob=0.5, translate_range=10),
         EnsureType(data_type='tensor')
@@ -250,7 +248,7 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
     val_transforms = Compose([
         #AddChannel,
         #EnsureChannelFirst(),
-        ScaleIntensity(minv=0.0, maxv=1.0),
+        #ScaleIntensity(minv=0.0, maxv=1.0),
         EnsureType(data_type='tensor')
         ])
     test_transforms = Compose([
@@ -278,10 +276,17 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
         dataset_tune = Dataset1(x_tune, *y_tune)
         dataset_val = DatasetPred(x_val)
         dataset_val = DatasetPred(x_test)
-    elif _cox_model in ['PCHazard', 'LogisticHazard', 'DeepHit']:
+    elif _cox_model in ['PCHazard', 'LogisticHazard']:
         # need to dicrete labels
         dataset_train = Dataset0(df_train, transform=train_transforms)
         dataset_tune = Dataset0(df_tune, transform=tune_transforms)
+        dataset_tune_cb = DatasetPred(df_tune, transform=val_transforms)
+        dataset_val = DatasetPred(df_val, transform=val_transforms)
+        dataset_test = DatasetPred(df_test, transform=val_transforms)
+    elif _cox_model in ['DeepHit']:
+        # need to dicrete labels
+        dataset_train = DatasetDeepHit(df_train, transform=train_transforms)
+        dataset_tune = DatasetDeepHit(df_tune, transform=tune_transforms)
         dataset_tune_cb = DatasetPred(df_tune, transform=val_transforms)
         dataset_val = DatasetPred(df_val, transform=val_transforms)
         dataset_test = DatasetPred(df_test, transform=val_transforms)
@@ -330,7 +335,7 @@ def collate_fn(batch):
     return tt.tuplefy(batch).stack()
 
 
-class Dataset1():
+class DatasetPCH():
     """
     Dataset class for PCHazard model
     Includes image and lables for training and tuning dataloader
@@ -352,6 +357,7 @@ class Dataset0(Dataset):
     Includes image and lables for training and tuning dataloader
     """
     def __init__(self, df, channel=3, transform=None, target_transform=None):
+        self.df = df
         self.img_dir = df['img_dir'].to_list()
         #self.time, self.event = tt.tuplefy(
         #    df['sur_duration'].to_numpy(), 
@@ -423,4 +429,40 @@ class DatasetPred(Dataset):
             img = self.transform(img)
         return img
 
+
+class DatasetDeepHit(Dataset):
+    """
+    Dataset class for CoxPH model
+    Includes image and lables for training and tuning dataloader
+    """
+    def __init__(self, df, transform=None, target_transform=None):
+        self.df = df
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        event = self.df['event'].to_numpy()
+        return event.shape[0]
+
+    def __getitem__(self, index):
+        if type(index) is not int:
+            raise ValueError(f'Need `index` to be `int`. Got {type(index)}.')
+        # image
+        img_dir = self.df['img_dir'].to_list()
+        img = nib.load(img_dir[index])
+        arr = img.get_data()
+        img = arr.reshape(1, arr.shape[0], arr.shape[1], arr.shape[2])
+        # target
+        time = self.df['time'].to_numpy()
+        event = self.df['event'].to_numpy()
+        rank_mat = pair_rank_mat(time[index], event[index])
+        time = torch.from_numpy(time)
+        event = torch.from_numpy(event)
+        rank_mat = torch.from_numpy(rank_mat)
+        if self.transform:
+            img = self.transform(img)
+        if self.target_transform:
+            label = self.target_transform(label)
+        
+        return img, (time[index], event[index], rank_mat)
 

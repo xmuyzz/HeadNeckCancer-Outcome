@@ -66,7 +66,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
             optimizer=optimizer,
             duration_index=duration_index
             )
-    elif cox_model_name == 'DeepHitSingle':
+    elif cox_model_name == 'DeepHit':
         """
         DeepHit is a PMF method with a loss for improved ranking that can
         handle competing risks.
