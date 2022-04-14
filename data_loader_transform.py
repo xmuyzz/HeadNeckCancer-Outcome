@@ -24,98 +24,8 @@ from monai.transforms import (AddChannel, AsChannelFirst, EnsureChannelFirst, Re
     Orientation, RandSpatialCrop, Spacing, Resize, ScaleIntensity, RandRotate, RandZoom,
     RandGaussianNoise, RandGaussianSharpen, RandGaussianSmooth, RandFlip, Rotate90, RandRotate90, 
     EnsureType, RandAffine)
+from get_data.get_dataset import get_dataset
 
-
-def get_dataset(tumor_type, input_data_type):
-    if tumor_type == 'primary_node':
-        if input_data_type == 'masked_img':
-            fns_train = [
-                'df_pn_masked_train0.csv',
-                'df_pn_masked_train1.csv',
-                'df_pn_masked_train2.csv',
-                'df_pn_masked_train3.csv',
-                'df_pn_masked_train4.csv']
-            fns_val = [
-                'df_pn_masked_val0.csv',
-                'df_pn_masked_val1.csv',
-                'df_pn_masked_val2.csv',
-                'df_pn_masked_val3.csv',
-                'df_pn_masked_val4.csv']
-            fn_test = 'df_pn_masked_test.csv'
-        elif input_data_type == 'raw_img':
-            fns_train = [
-                'df_pn_raw_train0.csv',
-                'df_pn_raw_train1.csv',
-                'df_pn_raw_train2.csv',
-                'df_pn_raw_train3.csv',
-                'df_pn_raw_train4.csv']
-            fns_val = [
-                'df_pn_raw_val0.csv',
-                'df_pn_raw_val1.csv',
-                'df_pn_raw_val2.csv',
-                'df_pn_raw_val3.csv',
-                'df_pn_raw_val4.csv']
-            fn_test = 'df_pn_raw_test.csv'
-    if tumor_type == 'primary':
-        if input_data_type == 'masked_img':
-            fns_train = [
-                'df_p_masked_train0.csv',
-                'df_p_masked_train1.csv',
-                'df_p_masked_train2.csv',
-                'df_p_masked_train3.csv',
-                'df_p_masked_train4.csv']
-            fns_val = [
-                'df_p_masked_val0.csv',
-                'df_p_masked_val1.csv',
-                'df_p_masked_val2.csv',
-                'df_p_masked_val3.csv',
-                'df_p_masked_val4.csv']
-            fn_test = 'df_p_maksed_test.csv'
-        elif input_data_type == 'raw_img':
-            fns_train = [
-                'df_p_raw_train0.csv',
-                'df_p_raw_train1.csv',
-                'df_p_raw_train2.csv',
-                'df_p_raw_train3.csv',
-                'df_p_raw_train4.csv']
-            fns_val = [
-                'df_p_raw_val0.csv',
-                'df_p_raw_val1.csv',
-                'df_p_raw_val2.csv',
-                'df_p_raw_val3.csv',
-                'df_p_raw_val4.csv']
-            fn_test = 'df_p_raw_test.csv'
-    if tumor_type == 'node':
-        if input_data_type == 'masked_img':
-            fns_train = [
-                'df_n_masked_train0.csv',
-                'df_n_masked_train1.csv',
-                'df_n_masked_train2.csv',
-                'df_n_masked_train3.csv',
-                'df_n_masked_train4.csv']
-            fns_val = [
-                'df_n_masked_val0.csv',
-                'df_n_masked_val1.csv',
-                'df_n_masked_val2.csv',
-                'df_n_masked_val3.csv',
-                'df_n_masked_val4.csv']
-            fn_test = 'df_n_masked_test.csv'
-        elif input_data_type == 'raw_img':
-            fns_train = [
-                'df_n_raw_train0.csv',
-                'df_n_raw_train1.csv',
-                'df_n_raw_train2.csv',
-                'df_n_raw_train3.csv',
-                'df_n_raw_train4.csv']
-            fns_val = [
-                'df_n_raw_val0.csv',
-                'df_n_raw_val1.csv',
-                'df_n_raw_val2.csv',
-                'df_n_raw_val3.csv',
-                'df_n_raw_val4.csv']
-            fn_test = 'df_n_raw_test.csv'
-
-    return fns_train, fns_val, fn_test
 
 
 def data_prep(pro_data_dir, batch_size, _cox_model, num_durations, _outcome_model,
@@ -123,28 +33,18 @@ def data_prep(pro_data_dir, batch_size, _cox_model, num_durations, _outcome_mode
     
     """
     Prerpocess image and lable for DataLoader
-    
     Args:
         batch_size {int} -- batch size for data loading;
         _cox_model {str} -- cox model name;
-    
-    Keyword args:
         number_durations {int} -- number to discretize survival time;
-
     Returns:
         Dataloaders for train, tune and val datasets;
     """    
     
-    # CUDA for PyTorch
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda:0" if use_cuda else "cpu")
-    torch.backends.cudnn.benchmark = True
-    torch.cuda.empty_cache()
-
     ## load train and val dataset
     fns_train, fns_val, fn_test = get_dataset(
-            tumor_type=tumor_type, 
-            input_data_type=input_data_type)
+        tumor_type=tumor_type, 
+        input_data_type=input_data_type)
     fn_train = fns_train[i_kfold]
     fn_val = fns_val[i_kfold]
     df_train_ = pd.read_csv(os.path.join(pro_data_dir, fn_train))
@@ -232,9 +132,9 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
         RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
         RandGaussianSharpen(),
         RandGaussianSmooth(),
-        #RandAffine(prob=0.5, translate_range=10),
+        RandAffine(prob=0.5, translate_range=10),
         RandFlip(prob=0.5, spatial_axis=None),
-        #RandRotate(prob=0.5, range_x=5, range_y=5, range_z=5),
+        RandRotate(prob=0.5, range_x=5, range_y=5, range_z=5),
         EnsureType(data_type='tensor')
         ])
     tune_transforms = Compose([
@@ -270,29 +170,21 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
         i_kfold=i_kfold)
 
     # train, tune, val dataset
-    if _cox_model == 'CoxPH':
-        # no need to discrete labels
-        dataset_train = Dataset1(x_train, *y_train)
-        dataset_tune = Dataset1(x_tune, *y_tune)
-        dataset_val = DatasetPred(x_val)
-        dataset_val = DatasetPred(x_test)
+    if _cox_model in ['CoxPH']:
+        dataset_train = DatasetCoxPH(df=df_train, transform=train_transforms)
+        dataset_tune = DatasetCoxPH(df=df_tune, transform=tune_transforms)
     elif _cox_model in ['PCHazard', 'LogisticHazard']:
-        # need to dicrete labels
-        dataset_train = Dataset0(df_train, transform=train_transforms)
-        dataset_tune = Dataset0(df_tune, transform=tune_transforms)
-        dataset_tune_cb = DatasetPred(df_tune, transform=val_transforms)
-        dataset_val = DatasetPred(df_val, transform=val_transforms)
-        dataset_test = DatasetPred(df_test, transform=val_transforms)
+        dataset_train = Dataset0(df=df_train, transform=train_transforms)
+        dataset_tune = Dataset0(df=df_tune, transform=tune_transforms)
     elif _cox_model in ['DeepHit']:
-        # need to dicrete labels
-        dataset_train = DatasetDeepHit(df_train, transform=train_transforms)
-        dataset_tune = DatasetDeepHit(df_tune, transform=tune_transforms)
-        dataset_tune_cb = DatasetPred(df_tune, transform=val_transforms)
-        dataset_val = DatasetPred(df_val, transform=val_transforms)
-        dataset_test = DatasetPred(df_test, transform=val_transforms)
+        dataset_train = DatasetDeepHit(df=df_train, transform=train_transforms)
+        dataset_tune = DatasetDeepHit(df=df_tune, transform=tune_transforms)
     else:
         print('choose another cox model!')
- 
+    
+    dataset_tune_cb = DatasetPred(df_tune, transform=val_transforms)
+    dataset_val = DatasetPred(df_val, transform=val_transforms)
+    dataset_test = DatasetPred(df_test, transform=val_transforms)
     # check data
     #check_loader = DataLoader(dataset_train, batch_size=1)
     #check_data = first(check_loader)
@@ -335,7 +227,7 @@ def collate_fn(batch):
     return tt.tuplefy(batch).stack()
 
 
-class DatasetPCH():
+class DatasetPCHazard():
     """
     Dataset class for PCHazard model
     Includes image and lables for training and tuning dataloader
@@ -352,11 +244,10 @@ class DatasetPCH():
 
 
 class Dataset0(Dataset):
+    
+    """Dataset class for Logistic Hazard model
     """
-    Dataset class for CoxPH model
-    Includes image and lables for training and tuning dataloader
-    """
-    def __init__(self, df, channel=3, transform=None, target_transform=None):
+    def __init__(self, df, transform, target_transform=None):
         self.df = df
         self.img_dir = df['img_dir'].to_list()
         #self.time, self.event = tt.tuplefy(
@@ -395,12 +286,9 @@ class Dataset0(Dataset):
 
 
 class DatasetPred(Dataset):
-
+    
+    """Dataset class for CoxPH model
     """
-    Dataset class for CoxPH model
-    Only include image for validation and test dataloader
-    """
-
     def __init__(self, df, channel=3, transform=None):
         self.img_dir = df['img_dir'].to_list()
         self.transform = transform
@@ -431,11 +319,10 @@ class DatasetPred(Dataset):
 
 
 class DatasetDeepHit(Dataset):
+    
+    """Dataset class for DeepHit model
     """
-    Dataset class for CoxPH model
-    Includes image and lables for training and tuning dataloader
-    """
-    def __init__(self, df, transform=None, target_transform=None):
+    def __init__(self, df, transform, target_transform=None):
         self.df = df
         self.transform = transform
         self.target_transform = target_transform
@@ -465,4 +352,38 @@ class DatasetDeepHit(Dataset):
             label = self.target_transform(label)
         
         return img, (time[index], event[index], rank_mat)
+
+
+class DatasetCoxPH(Dataset):
+    
+    """Dataset class for CoxPH method
+    """
+    def __init__(self, df, transform=None, target_transform=None):
+        self.df = df
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        event = self.df['event'].to_numpy()
+        return event.shape[0]
+
+    def __getitem__(self, index):
+        assert type(index) is int
+        # image
+        img_dir = self.df['img_dir'].to_list()
+        img = nib.load(img_dir[index])
+        arr = img.get_data()
+        img = arr.reshape(1, arr.shape[0], arr.shape[1], arr.shape[2])
+        # target
+        time = self.df['time'].to_numpy()
+        event = self.df['event'].to_numpy()
+        time = torch.from_numpy(time)
+        event = torch.from_numpy(event)
+        if self.transform:
+            img = self.transform(img)
+        if self.target_transform:
+            label = self.target_transform(label)
+
+        return img, (time[index], event[index])
+
 
