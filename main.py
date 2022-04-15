@@ -69,8 +69,8 @@ def main(opt):
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
 
-        cnns = ['MobileNetV2']
-        model_depths = [121, 169, 201]
+        cnns = ['DenseNet']
+        model_depths = [121]
         for cnn_name in cnns:   
             for model_depth in model_depths:
                 if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:

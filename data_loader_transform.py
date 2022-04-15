@@ -92,7 +92,6 @@ def data_prep(pro_data_dir, batch_size, _cox_model, num_durations, _outcome_mode
         elif _cox_model == 'CoxPH':
             y = get_target(df)
             out_features = 1
-            duration_index = labtrans.cuts
         # create new df
         df['time'], df['event'] = [y[0], y[1]]
         dfs.append(df)
