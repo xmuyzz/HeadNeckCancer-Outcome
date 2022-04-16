@@ -64,8 +64,8 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         patience=200,
         file_path=saved_cpt)
     # combine call backs
-    #callbacks = [concordance, early_stopping, lr_scheduler]
-    callbacks = [lr_scheduler]
+    callbacks = [concordance, early_stopping, lr_scheduler]
+    #callbacks = [lr_scheduler]
     # fit model
     if fit_model:
         my_model = cox_model
