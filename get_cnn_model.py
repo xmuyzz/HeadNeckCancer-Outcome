@@ -10,7 +10,7 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
     
     """
     generate CNN models
-
+    
     Args:
         cnn_name {str} -- cnn model names;
         model_depth {int} -- model depth number;
@@ -19,9 +19,7 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
         sample_size {int} -- image size;
     Returns:
         cnn model for train;
-
     """
-
 
     # simple CNN 
     if cnn_name == 'cnn':

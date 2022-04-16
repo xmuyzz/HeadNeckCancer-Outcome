@@ -43,10 +43,11 @@ def main(opt):
             os.makedirs(opt.test_dir)
 
     if opt.augmentation:
-        dl_train, dl_tune, dl_val, dl_test, dl_tune_cb, df_tune = data_loader_transform(
+        dl_train, dl_tune, dl_val, dl_test, dl_tune_cb, df_tune, \
+        dl_baseline = data_loader_transform(
             pro_data_dir=opt.pro_data_dir, 
             batch_size=opt.batch_size, 
-            _cox_model=opt.cox_model_name, 
+            _cox_model=opt._cox_model, 
             num_durations=opt.num_durations,
             _outcome_model=opt._outcome_model,
             tumor_type=opt.tumor_type,
@@ -63,14 +64,14 @@ def main(opt):
         """
         CNN Models
         Implemented:
-            MobileNetV2, MobileNet, ResNet, ResNetV2, WideResNet, 
+            cnn, MobileNetV2, MobileNet, ResNet, ResNetV2, WideResNet, 
             ShuffleNet, ShuffleNetV2, DenseNet, EfficientNet(b0-b9),
-        Not working:
+        Temperarily not working:
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
 
         cnns = ['DenseNet']
-        model_depths = [121]
+        model_depths = [121, 169, 201]
         for cnn_name in cnns:   
             for model_depth in model_depths:
                 if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
@@ -82,15 +83,20 @@ def main(opt):
                 elif cnn_name in ['MobileNet', 'MobileNetV2', 'ShuffleNet', 
                                    'ShuffleNetV2', 'EfficientNet']:
                     model_depth = 0
+                if opt._cox_model == 'CoxPH':
+                    n_classes = 1
+                    print('n_classes:', n_classes)
+                else:
+                    n_classes = opt.num_durations
                 cnn_model = get_cnn_model(
                     cnn_name=cnn_name,
                     model_depth=model_depth,
-                    n_classes=opt.num_durations, 
+                    n_classes=n_classes, 
                     in_channels=opt.in_channels)
                 cox_model = get_cox_model(
                     pro_data_dir=opt.pro_data_dir,
                     cnn_model=cnn_model,
-                    cox_model_name=opt.cox_model_name,
+                    _cox_model=opt._cox_model,
                     lr=opt.lr)
                 for epoch in [100]:
                     for lr in [0.0001]:
@@ -108,7 +114,9 @@ def main(opt):
                             dl_val=dl_val,
                             dl_tune_cb=dl_tune_cb,
                             df_tune=df_tune,
+                            dl_baseline=dl_baseline,
                             cnn_name=cnn_name,
+                            _cox_model=opt._cox_model,
                             lr=lr,
                             target_c_index=0.75,
                             eval_model='best_model')

@@ -23,9 +23,9 @@ from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ReduceLROnPl
 
 
 def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, epochs, dl_train, 
-          dl_tune, dl_val, dl_tune_cb, df_tune, cnn_name, model_depth, lr, target_c_index=0.8,
-          eval_model='best_model', scheduler_type='lambda', train_logs=True, plot_c_indices=True,
-          fit_model=True):
+          dl_tune, dl_val, dl_tune_cb, df_tune, dl_baseline, cnn_name, _cox_model, model_depth, 
+          lr, target_c_index=0.8, eval_model='best_model', scheduler_type='lambda', train_logs=True, 
+          plot_c_indices=True, fit_model=True):
     
     # choose callback functions
     #---------------------------
@@ -48,10 +48,12 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
     concordance = Concordance(
         model_dir=model_dir,
         log_dir=log_dir,
+        dl_baseline=dl_baseline,
         df_tune=df_tune,
         dl_tune_cb=dl_tune_cb,
         target_c_index=target_c_index,
         cnn_name=cnn_name,
+        _cox_model=_cox_model,
         model_depth=model_depth,
         lr=lr)
     # callback: early stopping with c-index
@@ -93,6 +95,9 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         fn = str(cnn_name) + str(model_depth) + '_' + '_final_model.pt'
         print(fn)
     cox_model.load_net(os.path.join(model_dir, fn))
+    if _cox_model == 'CoxPH':
+        print('compute baseline hazard for CoxPH!')
+        _ = model.compute_baseline_hazards()
     surv = cox_model.predict_surv_df(dl_val)
     fn_surv = cnn_name + str(model_depth) + str(c_index) + 'surv.csv'
     surv.to_csv(os.path.join(pro_data_dir, fn_surv), index=False)
@@ -151,6 +156,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
             f.write('\nval c-index: %s' % val_c_index)
             f.write('\ncnn model: %s' % cnn_name)
             f.write('\nmodel depth: %s' % model_depth)
+            f.write('\ncox model: %s' % _cox_model)
             f.write('\nepoch: %s' % epochs)
             f.write('\nlearning rate: %s' % lr)
             f.write('\n')

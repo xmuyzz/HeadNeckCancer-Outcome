@@ -23,17 +23,19 @@ class Concordance(tt.cb.MonitorMetrics):
 
     """
 
-    def __init__(self, model_dir, log_dir, df_tune, dl_tune_cb, target_c_index, 
-                 cnn_name, model_depth, lr, per_epoch=1, verbose=True):
+    def __init__(self, model_dir, log_dir, dl_baseline, df_tune, dl_tune_cb, target_c_index, 
+                 cnn_name,_cox_model, model_depth, lr, per_epoch=1, verbose=True):
         super().__init__(per_epoch)
         self.model_dir = model_dir
         self.log_dir = log_dir
         self.verbose = verbose
+        self.dl_baseline = dl_baseline
         self.dl_tune_cb = dl_tune_cb
         self.df_tune = df_tune
         self.target_c_index = target_c_index
         self.c_indexs = []
         self.cnn_name = cnn_name
+        self._cox_model = _cox_model
         self.model_depth = model_depth
         self.lr = lr
         self.lrs = []
@@ -44,6 +46,9 @@ class Concordance(tt.cb.MonitorMetrics):
         event = self.df_tune['death_event'].to_numpy()
         super().on_epoch_end()
         if self.epoch % self.per_epoch == 0:
+            if self._cox_model == 'CoxPH':
+                baseline_data = tt.tuplefy([data for data in self.dl_baseline]).cat()
+                _ = self.model.compute_baseline_hazards(*baseline_data)
             surv = self.model.predict_surv_df(self.dl_tune_cb)
             ev = EvalSurv(surv, time, event)
             c_index = ev.concordance_td()

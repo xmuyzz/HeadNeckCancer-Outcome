@@ -23,7 +23,7 @@ from pycox.utils import kaplan_meier
 
 
 
-def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
+def get_cox_model(pro_data_dir, cnn_model, _cox_model, lr):
 
     """
     get cox model
@@ -42,7 +42,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
     duration_index = np.load(os.path.join(pro_data_dir, 'duration_index.npy'))
     optimizer=torch.optim.Adam(cnn_model.parameters(), lr=lr)
 
-    if cox_model_name == 'PCHazard':
+    if _cox_model == 'PCHazard':
         """
         The Piecewise Constant Hazard (PC-Hazard) model assumes that 
         the continuous-time hazard function is constant in predefined intervals. 
@@ -55,7 +55,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
             optimizer=optimizer,
             duration_index=duration_index
             )
-    elif cox_model_name == 'LogisticHazard':
+    elif _cox_model == 'LogisticHazard':
         """
         The Logistic-Hazard method parametrize the discrete hazards and 
         optimize the survival likelihood. It is also called Partial Logistic 
@@ -66,7 +66,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
             optimizer=optimizer,
             duration_index=duration_index
             )
-    elif cox_model_name == 'DeepHit':
+    elif _cox_model == 'DeepHit':
         """
         DeepHit is a PMF method with a loss for improved ranking that can
         handle competing risks.
@@ -78,7 +78,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
             sigma=0.1, 
             duration_index=duration_index
             )
-    elif cox_model_name == 'CoxPH':
+    elif _cox_model == 'CoxPH':
         """
         CoxPH is a Cox proportional hazards model also referred to as DeepSurv.
         """
@@ -88,7 +88,7 @@ def get_cox_model(pro_data_dir, cnn_model, cox_model_name, lr):
             )
     else:
         print('please select other cox models!')
-    print('cox model:', cox_model_name)
+    print('cox model:', _cox_model)
 
     return cox_model
 

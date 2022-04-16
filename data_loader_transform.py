@@ -94,6 +94,8 @@ def data_prep(pro_data_dir, batch_size, _cox_model, num_durations, _outcome_mode
             out_features = 1
         # create new df
         df['time'], df['event'] = [y[0], y[1]]
+        #print('time:', df['time'])
+        #print('event:', df['event'])
         dfs.append(df)
     df_train = dfs[0]
     df_tune = dfs[1]
@@ -126,7 +128,7 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
     # image transforma with MONAI
     train_transforms = Compose([
         #EnsureChannelFirst(),
-        #ScaleIntensity(minv=0.0, maxv=1.0),
+        ScaleIntensity(minv=0.0, maxv=1.0),
         #Resized(spatial_size=(96, 96, 96)),
         RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
         RandGaussianSharpen(),
@@ -134,29 +136,30 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
         RandAffine(prob=0.5, translate_range=10),
         RandFlip(prob=0.5, spatial_axis=None),
         RandRotate(prob=0.5, range_x=5, range_y=5, range_z=5),
-        EnsureType(data_type='tensor')
-        ])
+        EnsureType(data_type='tensor')])
     tune_transforms = Compose([
         #AddChannel,
         #EnsureChannelFirst(),
-        #ScaleIntensity(minv=0.0, maxv=1.0),
+        ScaleIntensity(minv=0.0, maxv=1.0),
         #RandGaussianNoise(prob=0.1, mean=0.0, std=0.1),
         #RandAffine(prob=0.5, translate_range=10),
-        EnsureType(data_type='tensor')
-        ])
+        EnsureType(data_type='tensor')])
     val_transforms = Compose([
         #AddChannel,
         #EnsureChannelFirst(),
-        #ScaleIntensity(minv=0.0, maxv=1.0),
-        EnsureType(data_type='tensor')
-        ])
+        ScaleIntensity(minv=0.0, maxv=1.0),
+        EnsureType(data_type='tensor')])
     test_transforms = Compose([
         #AddChannel,
         #EnsureChannelFirst(),
         ScaleIntensity(minv=0.0, maxv=1.0),
-        EnsureType(data_type='tensor')
-        ])
-
+        EnsureType(data_type='tensor')])
+    baseline_transforms = Compose([
+        #AddChannel,
+        #EnsureChannelFirst(),
+        ScaleIntensity(minv=0.0, maxv=1.0),
+        EnsureType(data_type='tensor')])
+    
     # get dataset for train, tune and val
     df_train, df_tune, df_val, df_test = data_prep(
         pro_data_dir=pro_data_dir,
@@ -180,14 +183,17 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
         dataset_tune = DatasetDeepHit(df=df_tune, transform=tune_transforms)
     else:
         print('choose another cox model!')
-    
+    dataset_baseline = DatasetCoxPH(df=df_train[0:50], transform=tune_transforms)
     dataset_tune_cb = DatasetPred(df_tune, transform=val_transforms)
     dataset_val = DatasetPred(df_val, transform=val_transforms)
     dataset_test = DatasetPred(df_test, transform=val_transforms)
+    
     # check data
-    #check_loader = DataLoader(dataset_train, batch_size=1)
-    #check_data = first(check_loader)
-    #print('\ncheck image and lable shape:', check_data)
+    check_data = False
+    if check_data:
+        check_loader = DataLoader(dataset_train, batch_size=1, collate_fn=collate_fn)
+        check_data = first(check_loader)
+        print('\ncheck image and lable shape:', check_data.size)
 
     # batch data loader using Pycox and TorchTuple
     dl_train = DataLoader(
@@ -213,9 +219,13 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
         dataset=dataset_test,
         batch_size=batch_size,
         shuffle=False)
+    dl_baseline = DataLoader(
+        dataset=dataset_baseline,
+        batch_size=batch_size,
+        shuffle=False)
     #print('successfully created data loaders!')
 
-    return dl_train, dl_tune, dl_val, dl_test, dl_tune_cb, df_tune
+    return dl_train, dl_tune, dl_val, dl_test, dl_tune_cb, df_tune, dl_baseline
 
 
 
@@ -246,29 +256,23 @@ class Dataset0(Dataset):
     
     """Dataset class for Logistic Hazard model
     """
-    def __init__(self, df, transform, target_transform=None):
+    def __init__(self, df, transform):
         self.df = df
         self.img_dir = df['img_dir'].to_list()
-        #self.time, self.event = tt.tuplefy(
-        #    df['sur_duration'].to_numpy(), 
-        #    df['survival'].to_numpy()).to_tensor()
         self.time = torch.from_numpy(df['time'].to_numpy())
         self.event = torch.from_numpy(df['event'].to_numpy())
         self.transform = transform
-        self.target_transform = target_transform
 
     def __len__(self):
         #print('event size:', self.event.size(dim=0))
         return self.event.shape[0]
 
     def __getitem__(self, index):
-        if type(index) is not int:
-            raise ValueError(f'Need `index` to be `int`. Got {type(index)}.')
-        img = nib.load(self.img_dir[index])
-        arr = img.get_data()
+        assert type(index) is int
+        img = nib.load(self.img_dir[index]).get_data()
         # choose image channel
         #img = np.broadcast_to(arr, (3, arr.shape[0], arr.shape[1], arr.shape[2]))
-        img = arr.reshape(1, arr.shape[0], arr.shape[1], arr.shape[2])
+        img = img.reshape(1, img.shape[0], img.shape[1], img.shape[2])
         #if self.channel == 1:
         #    img = arr.reshape(arr.shape[0], arr.shape[1], arr.shape[2], 1)
         #elif self.channel == 3:
@@ -279,8 +283,7 @@ class Dataset0(Dataset):
         #print(arr.shape)
         if self.transform:
             img = self.transform(img)
-        if self.target_transform:
-            label = self.target_transform(label)
+        
         return img, (self.time[index], self.event[index])
 
 
@@ -288,7 +291,7 @@ class DatasetPred(Dataset):
     
     """Dataset class for CoxPH model
     """
-    def __init__(self, df, channel=3, transform=None):
+    def __init__(self, df, transform):
         self.img_dir = df['img_dir'].to_list()
         self.transform = transform
 
@@ -297,8 +300,7 @@ class DatasetPred(Dataset):
         return len(self.img_dir)
 
     def __getitem__(self, index):
-        if type(index) is not int:
-            raise ValueError(f'Need `index` to be `int`. Got {type(index)}.')
+        assert type(index) is int
         img = nib.load(self.img_dir[index])
         arr = img.get_data()
         img = arr.reshape(1, arr.shape[0], arr.shape[1], arr.shape[2])
@@ -321,46 +323,9 @@ class DatasetDeepHit(Dataset):
     
     """Dataset class for DeepHit model
     """
-    def __init__(self, df, transform, target_transform=None):
+    def __init__(self, df, transform):
         self.df = df
         self.transform = transform
-        self.target_transform = target_transform
-
-    def __len__(self):
-        event = self.df['event'].to_numpy()
-        return event.shape[0]
-
-    def __getitem__(self, index):
-        if type(index) is not int:
-            raise ValueError(f'Need `index` to be `int`. Got {type(index)}.')
-        # image
-        img_dir = self.df['img_dir'].to_list()
-        img = nib.load(img_dir[index])
-        arr = img.get_data()
-        img = arr.reshape(1, arr.shape[0], arr.shape[1], arr.shape[2])
-        # target
-        time = self.df['time'].to_numpy()
-        event = self.df['event'].to_numpy()
-        rank_mat = pair_rank_mat(time[index], event[index])
-        time = torch.from_numpy(time)
-        event = torch.from_numpy(event)
-        rank_mat = torch.from_numpy(rank_mat)
-        if self.transform:
-            img = self.transform(img)
-        if self.target_transform:
-            label = self.target_transform(label)
-        
-        return img, (time[index], event[index], rank_mat)
-
-
-class DatasetCoxPH(Dataset):
-    
-    """Dataset class for CoxPH method
-    """
-    def __init__(self, df, transform=None, target_transform=None):
-        self.df = df
-        self.transform = transform
-        self.target_transform = target_transform
 
     def __len__(self):
         event = self.df['event'].to_numpy()
@@ -376,13 +341,37 @@ class DatasetCoxPH(Dataset):
         # target
         time = self.df['time'].to_numpy()
         event = self.df['event'].to_numpy()
+        rank_mat = pair_rank_mat(time[index], event[index])
         time = torch.from_numpy(time)
         event = torch.from_numpy(event)
+        rank_mat = torch.from_numpy(rank_mat)
         if self.transform:
             img = self.transform(img)
-        if self.target_transform:
-            label = self.target_transform(label)
+        
+        return img, (time[index], event[index], rank_mat)
 
+
+class DatasetCoxPH(Dataset):
+    
+    """Dataset class for CoxPH method
+    """
+    def __init__(self, df, transform):
+        self.df = df
+        self.transform = transform
+
+    def __len__(self):
+        event = self.df['event'].to_numpy()
+        return event.shape[0]
+
+    def __getitem__(self, index):
+        assert type(index) is int
+        img_dir = self.df['img_dir'].to_list()
+        img = nib.load(img_dir[index]).get_data()
+        img = img.reshape(1, img.shape[0], img.shape[1], img.shape[2])
+        time = torch.from_numpy(self.df['time'].to_numpy())
+        event = torch.from_numpy(self.df['event'].to_numpy())
+        if self.transform:
+            img = self.transform(img)
         return img, (time[index], event[index])
 
 
