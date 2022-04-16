@@ -19,7 +19,7 @@ def parse_opts():
     parser.add_argument('--test_folder', default='test', type=str, help='Test results path')
     
     # data preprocessing
-    parser.add_argument('--_outcome_model', default='distant_control', type=str, 
+    parser.add_argument('--_outcome_model', default='overall_survival', type=str, 
                         help='outcome model (overall_survival|local_control|distant_control')
     parser.add_argument('--new_spacing', default=(1, 1, 3), type=float, help='new spacing size')
     parser.add_argument('--data_exclude', default=None, type=str, help='Exclude data')

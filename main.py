@@ -70,8 +70,8 @@ def main(opt):
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
 
-        cnns = ['DenseNet']
-        model_depths = [121, 169, 201]
+        cnns = ['ResNetV2']
+        model_depths = [10, 18, 34, 50, 152, 200]
         for cnn_name in cnns:   
             for model_depth in model_depths:
                 if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
@@ -98,7 +98,7 @@ def main(opt):
                     cnn_model=cnn_model,
                     _cox_model=opt._cox_model,
                     lr=opt.lr)
-                for epoch in [100]:
+                for epoch in [50]:
                     for lr in [0.0001]:
                         train(
                             output_dir=opt.output_dir,
