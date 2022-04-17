@@ -19,19 +19,23 @@ def parse_opts():
     parser.add_argument('--test_folder', default='test', type=str, help='Test results path')
     
     # data preprocessing
+    parser.add_argument('--clinical_data_file', default='HN_clinical_meta_data.csv', type=str, help='label')
+    parser.add_argument('--save_label', default='label.csv', type=str, help='save label')
+    parser.add_argument('--norm_type', default='np_clip', type=str, help='img normalization type')
     parser.add_argument('--_outcome_model', default='overall_survival', type=str, 
                         help='outcome model (overall_survival|local_control|distant_control')
-    parser.add_argument('--new_spacing', default=(1, 1, 3), type=float, help='new spacing size')
+    parser.add_argument('--new_spacing', default=(2, 2, 2), type=float, help='new spacing size')
     parser.add_argument('--data_exclude', default=None, type=str, help='Exclude data')
     parser.add_argument('--crop_shape', default=[192, 192, 100], type=float, help='Crop image shape')
     parser.add_argument('--run_type', default=None, type=str, help='Used run type (train|val|test|tune)')
-    parser.add_argument('--input_channel', default=3, type=int, help='Input channel (1|3)')
+    parser.add_argument('--input_channel', default=1, type=int, help='Input channel (1|3)')
     parser.add_argument('--norm_type', default='np_clip', type=str, help='image normalization (np_clip|np_linear')
     parser.add_argument('--slice_range', default=range(17, 83), type=int, help='Axial slice range')
     parser.add_argument('--interp', default='linear', type=str, help='Interpolation for respacing')
+    parser.add_argument('--tumor_type', default='primary', type=str, help='(primary_node|primary|node')
+    parser.add_argument('--save_img_type', default='nii', type=str, help='(nii|npy')
 
     # train model
-    parser.add_argument('--tumor_type', default='primary_node', type=str, help='(primary_node|primary|node')
     parser.add_argument('--input_data_type', default='masked_img', type=str, help='(masked_img|raw_img')
     parser.add_argument('--i_kfold', default=0, type=int, help='(0|1|2|3|4)')
     parser.add_argument('--cnn_name', default='resnet101', type=str, help='resnet (18|34|50|152|200)')

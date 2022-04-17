@@ -90,6 +90,9 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         c_index = np.amax(c_indexs)
         fn = str(cnn_name) + str(model_depth) + '_' + str(c_index) + '_model.pt'
         print(fn)
+        if not os.path.exists(os.path.join(model_dir, fn)):
+            print('all c-index lower than target!')
+            fn = str(cnn_name) + str(model_depth) + '_' + '_final_model.pt'
     elif eval_model == 'final_model':
         c_index = c_indexs[-1]
         fn = str(cnn_name) + str(model_depth) + '_' + '_final_model.pt'

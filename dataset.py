@@ -18,17 +18,6 @@ from get_data.get_dir import get_dir
 
 if __name__ == '__main__':
 
-    data_dir = '/mnt/aertslab/DATA/HeadNeck/HN_PETSEG/curated'
-    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
-    out_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
-    clinical_data_file = 'HN_clinical_meta_data.csv'
-    save_label = 'label.csv'
-    norm_type = 'np_clip'
-    tumor_type = 'primary_node'
-    input_img_type = 'masked_img'
-    input_channel = 1
-    save_img_type = 'nii'
-    new_spacing = (2, 2, 2)
     run_max_bbox = False
     run_data = True
     split_data_only = False
@@ -39,43 +28,43 @@ if __name__ == '__main__':
         for input_img_type in ['raw_img']:
             if split_data_only:
                 split_dataset(
-                    proj_dir=proj_dir,
-                    tumor_type=tumor_type,
-                    input_img_type=input_img_type)
+                    proj_dir=opt.proj_dir,
+                    tumor_type=opt.tumor_type,
+                    input_img_type=opt.input_data_type)
             else:
                 ## get img, seg dir
                 if run_data:
                     if run_getdir:
                         get_dir(
-                            data_dir=data_dir,
-                            proj_dir=proj_dir,
-                            tumor_type=tumor_type)
+                            data_dir=opt.data_dir,
+                            proj_dir=opt.proj_dir,
+                            tumor_type=opt.tumor_type)
                     input_arr(
-                        data_dir=data_dir, 
-                        proj_dir=proj_dir,
-                        new_spacing=new_spacing,
-                        norm_type=norm_type, 
-                        tumor_type=tumor_type, 
-                        input_img_type=input_img_type,
-                        input_channel=input_channel,
+                        data_dir=opt.data_dir, 
+                        proj_dir=opt.proj_dir,
+                        new_spacing=opt.new_spacing,
+                        norm_type=opt.norm_type, 
+                        tumor_type=opt.tumor_type, 
+                        input_img_type=opt.input_img_type,
+                        input_channel=iopt.nput_channel,
                         run_max_bbox=run_max_bbox,
-                        save_img_type=save_img_type)
+                        save_img_type=opt.save_data_type)
                 if run_label: 
                     label(
-                        proj_dir=proj_dir,
-                        clinical_data_file=clinical_data_file, 
-                        save_label=save_label)
+                        proj_dir=opt.proj_dir,
+                        clinical_data_file=opt.clinical_data_file, 
+                        save_label=opt.save_label)
 
                 img_label_df(
-                    proj_dir=proj_dir,
-                    tumor_type=tumor_type,
-                    input_img_type=input_img_type,
-                    save_img_type=save_img_type)
+                    proj_dir=opt.proj_dir,
+                    tumor_type=opt.tumor_type,
+                    input_img_type=opt.input_data_type,
+                    save_img_type=opt.save_img_type)
                 
                 split_dataset(
-                    proj_dir=proj_dir,
-                    tumor_type=tumor_type,
-                    input_img_type=input_img_type)
+                    proj_dir=opt.proj_dir,
+                    tumor_type=opt.tumor_type,
+                    input_img_type=opt.input_data_type)
 
 
 
