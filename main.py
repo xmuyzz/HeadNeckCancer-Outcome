@@ -98,7 +98,7 @@ def main(opt):
                     cnn_model=cnn_model,
                     _cox_model=opt._cox_model,
                     lr=opt.lr)
-                for epoch in [50]:
+                for epoch in [2]:
                     for lr in [0.0001]:
                         train(
                             output_dir=opt.output_dir,

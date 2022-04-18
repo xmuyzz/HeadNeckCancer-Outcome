@@ -79,12 +79,14 @@ def data_prep(pro_data_dir, batch_size, _cox_model, num_durations, _outcome_mode
     elif _outcome_model == 'distant_control':
         get_target = lambda df: (df['ds_time'].values, df['ds_event'].values)
     # label transform 
+    print('df_test:', df_test['lr_event'].value_counts())
+    print('df_val:', df_val['lr_event'].value_counts())
+    print('df_tune:', df_tune['lr_event'].value_counts())
+    print('df_train:', df_train['lr_event'].value_counts())
     dfs = []
     for df in [df_train, df_tune, df_val, df_test]:
         if _cox_model in ['PCHazard', 'LogisticHazard', 'DeepHit']:
-            #labtrans = PCHazard.label_transform(num_durations)
             y = labtrans.fit_transform(*get_target(df))
-            #y = labtrans.transform(*get_target(df))
             out_features = labtrans.out_features
             duration_index = labtrans.cuts
             #print('y[0]:', y[0])
@@ -189,7 +191,7 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
     dataset_test = DatasetPred(df_test, transform=val_transforms)
     
     # check data
-    check_data = False
+    check_data = True
     if check_data:
         check_loader = DataLoader(dataset_train, batch_size=1, collate_fn=collate_fn)
         check_data = first(check_loader)

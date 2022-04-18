@@ -45,19 +45,6 @@ def label(proj_dir, clinical_data_file, save_label):
     print('cancer type:', df['diseasesite'])
     cancer_types = df['diseasesite'].to_list()
 
-    """
-    Local/regional recurence labeled as event "1", LR control labeled as no event "0";
-    Distant recurence labeled as event "1", distant control labeled as no event "0";
-    Death labeled as event "1", survive labeled as no event "0";
-    """
-    df['locoreginalcontrol'] = df['locoregionalcontrol'].map({'Yes': 0, 'No': 1})
-    df['localcontrol'] = df['localcontrol'].map({'Yes': 0, 'No': 1})
-    df['distantcontrol'] = df['distantcontrol'].map({'Yes': 0, 'No': 1, '1': 0, '0': 1})
-    df['regionalcontrol'] = df['regionalcontrol'].map({'Yes': 0, 'No': 1})
-    df['vitalstatus1'] = df['vitalstatus1'].map({'Dead': 1, 'Alive': 0})
-    df['vitalstatus2'] = df['vitalstatus2'].map({'Dead': 1, 'Alive': 0})
-    #print(df['vitalstatus1'].to_list())
-    #print(df['vitalstatus2'].to_list())
     
     # create patient id
     #------------------
@@ -81,6 +68,13 @@ def label(proj_dir, clinical_data_file, save_label):
 
     # local/regional control event and duration time
     #-----------------------------------------------
+    """
+    Local/regional recurence labeled as event "1", 
+    LR control labeled as no event "0"
+    """
+    df['locoreginalcontrol'] = df['locoregionalcontrol'].map({'Yes': 0, 'No': 1})
+    df['localcontrol'] = df['localcontrol'].map({'Yes': 0, 'No': 1})
+    df['regionalcontrol'] = df['regionalcontrol'].map({'Yes': 0, 'No': 1})
     # events
     lr_events = []
     for lr_event, l_event, r_event in zip(df['locoregionalcontrol'], 
@@ -91,7 +85,7 @@ def label(proj_dir, clinical_data_file, save_label):
         else: 
             lr_event = 0
         lr_events.append(lr_event)
-    # duration time
+    # time
     lr_times = []
     #print('fu:', df['daystolastfu'])
     for time, fu in zip(df['locoregionalcontrol_duration'], df['daystolastfu']):
@@ -104,9 +98,14 @@ def label(proj_dir, clinical_data_file, save_label):
             lr_times.append(lr_time)
         #print('lr_durations:', lr_durations)    
  
-
+    
     # distant control event and duration time
-    #-----------------------------------------
+    #---------------------------------------
+    """
+    Distant recurence labeled as event "1", 
+    distant control labeled as no event "0";
+    """
+    df['distantcontrol'] = df['distantcontrol'].map({'Yes': 0, 'No': 1, '1': 0, '0': 1})
     ## events
     ds_events = []
     for ds, x in zip(df['distantcontrol'], 
@@ -147,6 +146,11 @@ def label(proj_dir, clinical_data_file, save_label):
 
     # overall survival event and duration time
     #-----------------------------------------
+    """
+    Death labeled as event "1", survive labeled as no event "0"
+    """
+    df['vitalstatus1'] = df['vitalstatus1'].map({'Dead': 1, 'Alive': 0})
+    df['vitalstatus2'] = df['vitalstatus2'].map({'Dead': 1, 'Alive': 0})
     ## events
     death_events = []
     for death, vital1, vital2 in zip(df['death'], 
@@ -174,7 +178,6 @@ def label(proj_dir, clinical_data_file, save_label):
     last_fu = df['daystolastfu'].to_list()
     print('median followup:', np.median(last_fu))
 
-    #-----------------------------------------
     # HPV, smoking, stages, age, gender
     #-----------------------------------------
     # HPV status
@@ -270,6 +273,9 @@ def label(proj_dir, clinical_data_file, save_label):
     print(df['stage'].value_counts(normalize=True))
     print(df['hpv'].value_counts())
     print(df['hpv'].value_counts(normalize=True))
+
+
+
 
 #    ## delete patients in the empty or missing pn seg list
 #    ## change seg names to be consistent with label files

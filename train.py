@@ -83,6 +83,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         fig.savefig(os.path.join(log_dir, log_fn))
     
     # evalute model on val data
+    #--------------------------
     fn = str(cnn_name) + str(model_depth) + '_c_indexs.npy'
     c_indexs = np.load(os.path.join(log_dir, fn))
     print(c_indexs)
@@ -92,10 +93,10 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         print(fn)
         if not os.path.exists(os.path.join(model_dir, fn)):
             print('all c-index lower than target!')
-            fn = str(cnn_name) + str(model_depth) + '_' + '_final_model.pt'
+            fn = str(cnn_name) + str(model_depth) + '_final_model.pt'
     elif eval_model == 'final_model':
         c_index = c_indexs[-1]
-        fn = str(cnn_name) + str(model_depth) + '_' + '_final_model.pt'
+        fn = str(cnn_name) + str(model_depth) + '_final_model.pt'
         print(fn)
     cox_model.load_net(os.path.join(model_dir, fn))
     if _cox_model == 'CoxPH':
@@ -117,6 +118,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
     print('val c-index:', val_c_index)
 
     # plot c-index
+    #-------------
     if plot_c_indices:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
@@ -148,6 +150,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         plt.close()
 
     # write txt files
+    #----------------
     if train_logs:
         log_fn = 'train_logs.text'
         write_path = os.path.join(log_dir, log_fn)
