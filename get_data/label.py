@@ -75,15 +75,16 @@ def label(proj_dir, clinical_data_file, save_label):
     #print(df['locoregionalcontrol'].to_list())
     #print(df['locoregionalcontrol'].value_counts())
     # local/region control
-    df['locoregionalcontrol'] = df['locoregionalcontrol'].map({'1': 'Yes', '0': 'No'})
-    df['locoregionalcontrol'] = df['locoregionalcontrol'].map({'Yes': 0, 'No': 1})
+    df['locoregionalcontrol'] = df['locoregionalcontrol'].astype(str)
+    df['locoregionalcontrol'] = df['locoregionalcontrol'].replace({'1': 'Yes', '0': 'No'})
+    df['locoregionalcontrol'] = df['locoregionalcontrol'].replace({'Yes': 0, 'No': 1})
     df['locoregionalcontrol'] = df['locoregionalcontrol'].astype(float)
     # local control
-    df['localcontrol'] = df['localcontrol'].map({'1': 'Yes', '0': 'No'})
+    df['localcontrol'] = df['localcontrol'].astype(str)
     df['localcontrol'] = df['localcontrol'].map({'Yes': 0, 'No': 1})
     df['localcontrol'] = df['localcontrol'].astype(float)
     # regional control
-    df['regionalcontrol'] = df['regionalcontrol'].map({'1': 'Yes', '0': 'No'})
+    df['regionalcontrol'] = df['regionalcontrol'].astype(str)
     df['regionalcontrol'] = df['regionalcontrol'].map({'Yes': 0, 'No': 1})
     df['regionalcontrol'] = df['regionalcontrol'].astype(float)
     # events
@@ -96,20 +97,32 @@ def label(proj_dir, clinical_data_file, save_label):
         else: 
             lr_event = 0
         lr_events.append(lr_event)
+    print('lr events:', lr_events)
     # time
+    df['daystolastfu'] = df['daystolastfu'].astype(float)
+    df['locoregionalcontrol_duration'].fillna(value=100, inplace=True)
+    df['locoregionalcontrol_duration'] = df['locoregionalcontrol_duration'].astype(float)
+    df['localcontrol_duration'].fillna(value=100, inplace=True)
+    df['localcontrol_duration'] = df['localcontrol_duration'].astype(float)
+    df['regionalcontrol_duration'].fillna(value=100, inplace=True)
+    df['regionalcontrol_duration'] = df['regionalcontrol_duration'].astype(float)
     lr_times = []
-    #print('fu:', df['daystolastfu'])
-    for time, fu in zip(df['locoregionalcontrol_duration'], df['daystolastfu']):
-        # check if duration is nan or none 
-        if time is None or np.isnan(time):
-            lr_time = fu
-            lr_times.append(lr_time)
-        else:
-            lr_time = time
-            lr_times.append(lr_time)
-        #print('lr_durations:', lr_durations)    
- 
-    
+    for lr_t, l_t, r_t, fu_t in zip(df['locoregionalcontrol_duration'], 
+                                    df['localcontrol_duration'],
+                                    df['regionalcontrol_duration'],
+                                    df['daystolastfu']):
+        if lr_t != 100:
+            lr_time = lr_t
+        elif lr_t == 100:
+            if l_t != 100:
+                lr_time = l_t
+            elif l_t == 100 and r_t != 100:
+                lr_time = r_t
+            elif l_t == 100 and r_t == 100:
+                lr_time = fu_t
+        lr_times.append(lr_time)
+        lr_times = [int(x) for x in lr_times]
+     
     # distant control event and duration time
     #---------------------------------------
     """
@@ -117,12 +130,11 @@ def label(proj_dir, clinical_data_file, save_label):
     distant control labeled as no event "0";
     """
     df['distantcontrol'].fillna(value=100, inplace=True)
-    df['distantcontrol_duration'].fillna(value=100, inplace=True)
-    df['disease-freeinterval(months)'].fillna(value=100, inplace=True)
-    df['distantcontrol'] = df['distantcontrol'].map({'1': 'Yes', '0': 'No'})
-    df['distantcontrol'] = df['distantcontrol'].map({'Yes': 0, 'No': 1})
+    df['distantcontrol'] = df['distantcontrol'].astype('str')
+    df['distantcontrol'] = df['distantcontrol'].replace({'1': 'Yes', '0': 'No'})
+    df['distantcontrol'] = df['distantcontrol'].replace({'Yes': 0, 'No': 1})
     df['distantcontrol'] = df['distantcontrol'].astype(float)
-    print('distant control:', df['distantcontrol'])
+    df['siteofrecurrence(distal/local/locoregional)'] = df['siteofrecurrence(distal/local/locoregional)'].astype('str')
     ## events
     ds_events = []
     for ds, x in zip(df['distantcontrol'], 
@@ -141,9 +153,11 @@ def label(proj_dir, clinical_data_file, save_label):
             else:
                 ds_event = 0
         ds_events.append(ds_event)
-    print(ds_events)
+    print('ds events:', ds_events)
     
     ## duration time
+    df['distantcontrol_duration'].fillna(value=100, inplace=True)
+    df['disease-freeinterval(months)'].fillna(value=100, inplace=True)
     ds_times = []
     for duration, fu, ds, x in zip(df['distantcontrol_duration'], 
                                    df['daystolastfu'],
@@ -157,48 +171,52 @@ def label(proj_dir, clinical_data_file, save_label):
         elif ds == 100:
             ds_time = x * 30
         ds_times.append(ds_time)
+        ds_times = [int(x) for x in ds_times]
     #print('ds_durations:', ds_durations)
     
-    #df = pd.DataFrame({'ds_ctr': ds_ctrs, 'df_duration': ds_durations})
-
     # overall survival event and duration time
     #-----------------------------------------
     """
     Death labeled as event "1", survive labeled as no event "0"
     """
+    # events
     df['death'].fillna(value=100, inplace=True)
+    df['death'] = df['death'].astype(float)
     df['vitalstatus1'].fillna(value=100, inplace=True)
     df['vitalstatus2'].fillna(value=100, inplace=True)
-    print(df['death'])
-    print(df['death'].value_counts())
-    df['death'] = df['death'].astype(float)
-    df['vitalstatus1'] = df['vitalstatus1'].map({'Dead': 1, 'Alive': 0})
-    df['vitalstatus2'] = df['vitalstatus2'].map({'Dead': 1, 'Alive': 0})
-    print(df['death'])
-    ## events
+    df['vitalstatus1'] = df['vitalstatus1'].replace({'Dead': 1, 'Alive': 0})
+    df['vitalstatus2'] = df['vitalstatus2'].replace({'Dead': 1, 'Alive': 0})
+    df['vitalstatus1'] = df['vitalstatus1'].astype(float)
+    df['vitalstatus2'] = df['vitalstatus2'].astype(float)
     death_events = []
     for death, vital1, vital2 in zip(df['death'], 
                                      df['vitalstatus1'], 
                                      df['vitalstatus2']):
         if death != 100:
             death_event = death
-        else:
-            if vital1 != 100:
+        elif death == 100:
+            if vital1 != 100 and vital2 == 100:
                 death_event = vital1
             elif vital1 == 100 and vital2 != 100:
                 death_event = vital2
+            elif vital1 == 100 and vital2 == 100:
+                print('missing death info')
         death_events.append(death_event)
+        death_events = [int(x) for x in death_events]
+    print('death_events:', death_events)
+    
     # time
     death_times = []
+    df['daystolastfu'] = df['daystolastfu'].astype(float)
     df['overallsurvival_duration'].fillna(value=100, inplace=True)
+    df['overallsurvival_duration'] = df['overallsurvival_duration'].astype(float)
     for fu_t, os_t in zip(df['daystolastfu'], df['overallsurvival_duration']):
         if os_t != 100:
             t = os_t
         else:
             t = fu_t
         death_times.append(t)
-
-    #print('median followup:', np.median(last_fu))
+        death_times = [int(x) for x in death_times]
 
     # HPV, smoking, stages, age, gender
     #-----------------------------------------
