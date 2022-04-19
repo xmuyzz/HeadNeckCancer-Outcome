@@ -14,15 +14,19 @@ from get_data.label import label
 from get_data.img_label_df import img_label_df
 from get_data.split_dataset import split_dataset
 from get_data.get_dir import get_dir
+from opts import parse_opts
 
 
 if __name__ == '__main__':
-
+    
+    opt = parse_opts()
+    
     run_max_bbox = False
-    run_data = True
+    run_data = False
     split_data_only = False
     run_getdir = True
-    run_label = False
+    run_label = True
+    run_get_dataset = False
 
     for tumor_type in ['primary_node']:
         for input_img_type in ['raw_img']:
@@ -54,17 +58,16 @@ if __name__ == '__main__':
                         proj_dir=opt.proj_dir,
                         clinical_data_file=opt.clinical_data_file, 
                         save_label=opt.save_label)
-
-                img_label_df(
-                    proj_dir=opt.proj_dir,
-                    tumor_type=opt.tumor_type,
-                    input_img_type=opt.input_data_type,
-                    save_img_type=opt.save_img_type)
-                
-                split_dataset(
-                    proj_dir=opt.proj_dir,
-                    tumor_type=opt.tumor_type,
-                    input_img_type=opt.input_data_type)
+                if run_get_dataset:
+                    img_label_df(
+                        proj_dir=opt.proj_dir,
+                        tumor_type=opt.tumor_type,
+                        input_img_type=opt.input_data_type,
+                        save_img_type=opt.save_img_type)
+                    split_dataset(
+                        proj_dir=opt.proj_dir,
+                        tumor_type=opt.tumor_type,
+                        input_img_type=opt.input_data_type)
 
 
 
