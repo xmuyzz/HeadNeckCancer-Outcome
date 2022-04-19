@@ -31,11 +31,7 @@ def label(proj_dir, clinical_data_file, save_label):
 
     df = pd.read_csv(os.path.join(pro_data_dir, clinical_data_file))
     # drop duplicates in MDACC cohort, keep first patient that has distant control info
-    df.drop_duplicates(subset=['patientid'], keep='first', inplace=True)
-    #print(df['distantcontrol'].to_list())
-    #print(df['death'].to_list())
-    #print(df['vitalstatus1'].to_list())
-    #print(df['vitalstatus2'].to_list())
+    df.drop_duplicates(subset=['patientid'], keep='last', inplace=True)
     
     # only keep oropharynx patients
     #--------------------------------
