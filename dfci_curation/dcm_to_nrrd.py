@@ -86,6 +86,7 @@ def getPixelArray(slices):
     return np.array(image, dtype=np.int16)
 
 
+
 def load_dicom_pet(slice_list):
 
     """
