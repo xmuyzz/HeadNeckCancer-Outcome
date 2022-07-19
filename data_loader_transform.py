@@ -191,7 +191,7 @@ def data_loader_transform(pro_data_dir, batch_size, _cox_model, num_durations,
     dataset_test = DatasetPred(df_test, transform=val_transforms)
     
     # check data
-    check_data = True
+    check_data = False
     if check_data:
         check_loader = DataLoader(dataset_train, batch_size=1, collate_fn=collate_fn)
         check_data = first(check_loader)

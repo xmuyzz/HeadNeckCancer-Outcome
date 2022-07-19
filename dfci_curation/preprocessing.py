@@ -177,8 +177,7 @@ def crop(proj_dir):
     WILL ONLY WORK WITH SPACING = 1,1,3
     """
 
-    roi_size = (172, 172, 76) #x,y,z
-    size_str = '172 x 172 x 76'
+    roi_size = (160, 160, 64) #x,y,z
     img_reg_dir = proj_dir + '/DFCI/img_reg'
     seg_reg_dir = proj_dir + '/DFCI/seg_reg'
     img_crop_dir = proj_dir + '/DFCI/img_crop'

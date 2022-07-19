@@ -110,32 +110,27 @@ def crop_roi(dataset, patient_id, path_to_image_nrrd, path_to_label_nrrd, crop_s
         bbox = get_bbox(label_arr) ### Compare bbox[6] , bbox[7], bbox[8] to crop_shape - make sure 6,7,8 is smaller than crop_shape
         Z, Y, X = int(bbox[9]), int(bbox[10]), int(bbox[11]) # returns center point of the label array bounding box
         print("Original Centroid: ", X, Y, Z)
-        
         #find origin translation from label to image
         print("image origin: ", image_origin, " label origin: ",label_origin)
         origin_dif = tuple(np.subtract(label_origin,image_origin).astype(int))
         print("origin difference: ", origin_dif)
-        
         X_shift, Y_shift, Z_shift = tuple(np.add((X,Y,Z),np.divide(origin_dif,(1,1,3)).astype(int))) # 
         print("Centroid shifted: ", X_shift, Y_shift, Z_shift)
-        
-        image_arr_crop = crop_and_pad(image_arr, crop_shape, (X_shift,Y_shift,Z_shift), -1024)
+        image_arr_crop = crop_and_pad(image_arr, crop_shape, (X_shift, Y_shift, Z_shift), -1024)
         label_arr_crop = crop_and_pad(label_arr, crop_shape, (X,Y,Z), 0)
-        
-        #np.save()
-        
-        output_path_image = os.path.join(output_folder_image, "{}_{}_image_interpolated_roi_raw_gt.nrrd".format(dataset, patient_id))
-        output_path_label = os.path.join(output_folder_label, "{}_{}_label_interpolated_roi_raw_gt.nrrd".format(dataset, patient_id))
-        
+        output_path_image = os.path.join(
+            output_folder_image, "{}_{}_image_interpolated_roi_raw_gt.nrrd".format(dataset, patient_id))
+        output_path_label = os.path.join(
+            output_folder_label, "{}_{}_label_interpolated_roi_raw_gt.nrrd".format(dataset, patient_id))
         # save nrrd
-        image_crop_sitk = generate_sitk_obj_from_npy_array(label_obj, image_arr_crop, resize=False, output_dir=output_path_image)
-        label_crop_sitk = generate_sitk_obj_from_npy_array(label_obj, label_arr_crop, resize=False, output_dir=output_path_label)
-
+        image_crop_sitk = generate_sitk_obj_from_npy_array(
+            label_obj, image_arr_crop, resize=False, output_dir=output_path_image)
+        label_crop_sitk = generate_sitk_obj_from_npy_array(
+            label_obj, label_arr_crop, resize=False, output_dir=output_path_label)
         if return_type == "sitk_object":
             return image_crop_sitk, label_crop_sitk
         elif return_type == "numpy_array":
             return image_arr_crop, label_arr_crop
-
     except Exception as e:
         print ("Error in {}_{}, {}".format(dataset, patient_id, e))
 
@@ -260,8 +255,8 @@ def crop_top(patient_id, img_dir, seg_dir, crop_shape, return_type, output_img_d
         startz = int(c - crop_shape[2])
         #print('start X, Y, Z: ', startx, starty, startz)
         # cut bottom slices
-        image_arr = image_arr[20:, :, :]
-        label_arr = label_arr[20:, :, :]
+        image_arr = image_arr[30:, :, :]
+        label_arr = label_arr[30:, :, :]
         if startz < 0:
             image_arr = np.pad(
                 image_arr,
@@ -352,7 +347,7 @@ def crop_top_image_only(patient_id, img_dir, crop_shape, return_type, output_img
         startz = int(c - crop_shape[2])
         #print("start X, Y, Z: ", startx, starty, startz)
         # cut bottom slices
-        image_arr = image_arr[20:, :, :]
+        image_arr = image_arr[30:, :, :]
         if startz < 0:
             image_arr = np.pad(
                 image_arr,

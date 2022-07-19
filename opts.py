@@ -21,7 +21,7 @@ def parse_opts():
     # data preprocessing
     parser.add_argument('--clinical_data_file', default='HN_clinical_meta_data.csv', type=str, help='label')
     parser.add_argument('--save_label', default='label.csv', type=str, help='save label')
-    parser.add_argument('--_outcome_model', default='distant_control', type=str, 
+    parser.add_argument('--_outcome_model', default='overall_survival', type=str, 
                         help='outcome model (overall_survival|local_control|distant_control')
     parser.add_argument('--new_spacing', default=(2, 2, 2), type=float, help='new spacing size')
     parser.add_argument('--data_exclude', default=None, type=str, help='Exclude data')
@@ -38,7 +38,7 @@ def parse_opts():
     parser.add_argument('--input_data_type', default='masked_img', type=str, help='(masked_img|raw_img')
     parser.add_argument('--i_kfold', default=0, type=int, help='(0|1|2|3|4)')
     parser.add_argument('--cnn_name', default='resnet101', type=str, help='resnet (18|34|50|152|200)')
-    parser.add_argument('--_cox_model', default='LogisticHazard', type=str, help='cox model')
+    parser.add_argument('--_cox_model', default='DeepHit', type=str, help='cox model')
     parser.add_argument('--batch_size', default=8, type=int, help='Batch size')
     parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
     parser.add_argument('--epoch', default=3, type=int, help='Epoch')
