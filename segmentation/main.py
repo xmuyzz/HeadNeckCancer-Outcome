@@ -15,11 +15,11 @@ from utils import (generate_sitk_obj_from_npy_array, threshold, get_spacing, cal
 from plot_images import plot_images
 from losses import (precision_loss, dice_loss, tversky_loss, focal_tversky_loss, bce_loss, 
                     bce_dice_loss, wce_dice_loss)
+from opts import parse_opts
 
 
 
-def test(proj_dir, model_name, image_type, hausdorff_percent, overlap_tolerance, 
-         surface_dice_tolerance):
+def main(opts):
     """
     Test segmentation model and save prediction results
     Args:
@@ -46,15 +46,15 @@ def test(proj_dir, model_name, image_type, hausdorff_percent, overlap_tolerance,
         tf.config.experimental.set_memory_growth(device, True)
 
     # get test data
-    dfci_img_dir = os.path.join(proj_dir, "DFCI/img_crop")
-    dfci_seg_dir = os.path.join(proj_dir, "DFCI/seg_crop")
+    dfci_img_dir = os.path.join(opt.proj_dir, "DFCI/img_crop")
+    dfci_seg_dir = os.path.join(opt.proj_dir, "DFCI/seg_crop")
     data = get_data(
         dfci_img_dir=dfci_img_dir, 
         dfci_seg_dir=dfci_seg_dir, 
-        img_type="ct", 
+        img_type=opt.image_type, 
         dataset="dfci")
     # get model
-    model_dir = os.path.join(proj_dir, "seg_model", model_name)
+    model_dir = os.path.join(opt.proj_dir, "seg_model", opt.model_name)
     original_model = load_model(
         model_dir, 
         custom_objects={
@@ -62,8 +62,8 @@ def test(proj_dir, model_name, image_type, hausdorff_percent, overlap_tolerance,
             "wce_dice_loss": wce_dice_loss, 
             "lr": get_lr_metric})
     # prediction
-    seg_pred_dir = os.path.join(proj_dir, "seg_model/seg_pred")
-    output_dir = os.path.join(proj_dir, "seg_model/output")
+    seg_pred_dir = os.path.join(opt.proj_dir, "seg_model/seg_pred")
+    output_dir = os.path.join(opt.proj_dir, "seg_model/output")
     if not os.path.exists(seg_pred_dir):
         os.makedirs(seg_pred_dir)
     if not os.path.exists(output_dir):
@@ -112,9 +112,9 @@ def test(proj_dir, model_name, image_type, hausdorff_percent, overlap_tolerance,
                 spacing=spacing, 
                 label_arr_org=seg_arr_org, 
                 pred_arr_org=pred_arr_org, 
-                hausdorff_percent=hausdorff_percent, 
-                overlap_tolerance=overlap_tolerance,
-                surface_dice_tolerance=surface_dice_tolerance)    
+                hausdorff_percent=opt.hausdorff_percent, 
+                overlap_tolerance=opt.overlap_tolerance,
+                surface_dice_tolerance=opt.surface_dice_tolerance)    
             results.append(result)
             # plot 5x3 views
             plot_images(
@@ -127,7 +127,7 @@ def test(proj_dir, model_name, image_type, hausdorff_percent, overlap_tolerance,
                 bbox_flag=True,
                 bbox_metrics=bbox_metrics,
                 dice=dice)
-            print ("{} done. dice :: {}".format(patient_id, result["dice"]))
+            print ("{}, dice: {}".format(patient_id, result["dice"]))
             
             no_results.append(patient_id)
           #  # temporary for segmentation task
@@ -162,19 +162,11 @@ def test(proj_dir, model_name, image_type, hausdorff_percent, overlap_tolerance,
 
 if __name__ == '__main__':
     
-    image_type = 'ct'
-    hausdorff_percent = 95
-    overlap_tolerance = 5
-    surface_dice_tolerance = 5 # in millimeters,2 used for prior AIM work
-    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
-    model_name = '1wce_dice-loss-160augment-hn-petct-pmhcon_gtvp_LR0.001opc_contrast20220406-0936.h5' 
-    test(
-        proj_dir=proj_dir, 
-        model_name=model_name, 
-        image_type=image_type, 
-        hausdorff_percent=hausdorff_percent,
-        overlap_tolerance=overlap_tolerance, 
-        surface_dice_tolerance=surface_dice_tolerance)
+    opt = parse_opts()
+
+    main(opt)
+
+
 
 
 

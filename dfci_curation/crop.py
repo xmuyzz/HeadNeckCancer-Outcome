@@ -338,7 +338,7 @@ def crop_top_image_only(patient_id, img_dir, crop_shape, return_type, output_img
         centermass = ndimage.measurements.center_of_mass(mask_arr) # z,x,y   
         cpoint = c - crop_shape[2]//2
         #print("cpoint, ", cpoint)
-        centermass = ndimage.measurements.center_of_mass(mask_arr[cpoint,:,:])   
+        centermass = ndimage.measurements.center_of_mass(mask_arr[cpoint, :, :])   
         #print("center of mass: ", centermass)
         startx = int(centermass[0] - crop_shape[0]//2)
         starty = int(centermass[1] - crop_shape[1]//2)      
@@ -355,14 +355,10 @@ def crop_top_image_only(patient_id, img_dir, crop_shape, return_type, output_img
                 'constant', 
                 constant_values=-1024)
             image_arr_crop = image_arr[
-                0:crop_shape[2], 
-                starty:starty + crop_shape[1], 
-                startx:startx + crop_shape[0]]
+                0:crop_shape[2], starty:starty + crop_shape[1], startx:startx + crop_shape[0]]
         else:
             image_arr_crop = image_arr[
-                0:crop_shape[2], 
-                starty:starty + crop_shape[1], 
-                startx:startx + crop_shape[0]]
+                0:crop_shape[2], starty:starty + crop_shape[1], startx:startx + crop_shape[0]]
         if image_arr_crop.shape[0] < crop_shape[2]:
             print("initial cropped image shape too small:", image_arr_crop.shape)
             print(crop_shape[2], image_arr_crop.shape[0])
@@ -389,7 +385,137 @@ def crop_top_image_only(patient_id, img_dir, crop_shape, return_type, output_img
         print ("Error in {}, {}".format(patient_id, e))
 
 
+from SimpleITK.extra import GetArrayFromImage
+from scipy import ndimage
+import cc3d
+import cv2
+import matplotlib as plt
 
+def new_crop(img, pet, label, crop_shape):
+  
+# get image, arr, and spacing
+  image_arr = GetArrayFromImage(img)
+  image_spacing = img.GetSpacing()
+  image_origin = img.GetOrigin()
+  label_arr = GetArrayFromImage(label)
+  label_spacing = label.GetSpacing()
+  label_origin = label.GetOrigin()
+  pet_arr = GetArrayFromImage(pet)
+  pet_spacing = pet.GetSpacing()
+  pet_origin = pet.GetOrigin()
+  c,y,x = image_arr.shape
+  
+  ## Get center of mass to center the crop in Y plane
+  mask_arr = np.copy(image_arr)
+  mask_arr[mask_arr > -500] = 1
+  mask_arr[mask_arr <= -500] = 0
+  print("mask_arr min and max:", np.amin(mask_arr), np.amax(mask_arr))
+  mask_arr = np.array(mask_arr)
+  # find center of just connected components
+  labels_in = np.array(mask_arr[76, :, :], dtype=np.uint8 )
+  image = np.array(image_arr[76, :, :], dtype=np.uint8 )
+  image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+  # find contours in the binary image
+  contours, hierarchy = cv2.findContours(labels_in, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+  biggest = 0
+  index = -1
+  for j, ct in enumerate(contours):
+    circular_area = cv2.contourArea(ct)*np.power(4*np.pi*cv2.contourArea(ct)/(np.power(cv2.arcLength(ct,True),2)),2)
+    if circular_area > biggest:
+      biggest = circular_area
+      index = j
+  image_copy = image.copy()
+  contour = contours[index]
+  M = cv2.moments(contour)
+  # calculate x,y coordinate of center
+  cX = int(M["m10"] / M["m00"])
+  cY = int(M["m01"] / M["m00"])
+  #draw
+  #cv2.circle(image_copy, (cX, cY), 5, (255, 255, 255), -1)
+  #cv2.putText(image_copy, "centroid", (cX - 25, cY - 25),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+  #cv2.drawContours(image=image_copy, contours=contour, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+  #cv2_imshow(image_copy)
+  #cv2.waitKey(0)
+  #cv2.destroyAllWindows()
+  #connectivity = 8 # only 4,8 (2D) and 26, 18, and 6 (3D) are allowed
+  # Get a labeling of the k largest objects in the image.
+  # The output will be relabeled from 1 to N.
+  #labels_out = cc3d.connected_components(labels_in, connectivity=connectivity)
+  #extracted_image = labels_out * (labels_out == 1)
+  #centermass = ndimage.measurements.center_of_mass(extracted_image)
+  #centermass = ndimage.measurements.center_of_mass(mask_arr) # z,x,y
+  #print(centermass)
+  #print("c, ", c)
+  #cpoint = c-(crop_shape[2]//2)
+  #cpoint_range = np.array([c-crop_shape[2],c])
+  #print("cpoint_range, ", cpoint_range)
+  #centermass = np.array([0,0])
+  #for j in range(cpoint_range[0],cpoint_range[1]):
+  #  temp = ndimage.measurements.center_of_mass(mask_arr[j,:,:])
+  #  centermass[0] = centermass[0]+temp[0]
+  #  centermass[1] = centermass[1]+temp[1]
+  #centermass = centermass/(cpoint_range[1]-cpoint_range[0])
+  #centermass = np.array(ndimage.measurements.center_of_mass(extracted_image[cpoint,:,:]))
+  centermass = np.array([cX, cY])
+  #centermass = np.array([centermass[1],centermass[2]])
+  #centermass = centermass+750
+  #centermass = centermass /4
+  print("center of mass: ", centermass)
+  startx = int(centermass[0] - crop_shape[0]//2)
+  starty = int(centermass[1] - crop_shape[1]//2)
+  #startx = x//2 - crop_shape[0]//2
+  #starty = y//2 - crop_shape[1]//2
+  startz = int(c - crop_shape[2] - 20 )
+  print("start X, Y, Z:", startx, starty, startz)
+  #image_arr = image_arr[20:,:,:]
+  #label_arr = label_arr[20:,:,:]
+  #pet_arr = pet_arr[20:,:,:]
+  if startz < 0:
+    image_arr = np.pad(
+        image_arr,
+        ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
+        'constant', 
+        constant_values=-1024)
+    label_arr = np.pad(
+        label_arr,
+        ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
+        'constant', 
+        constant_values=0)
+    pet_arr = np.pad(
+        label_arr,
+        ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
+        'constant', 
+        constant_values=0)
+    #image_arr_crop = image_arr[0:crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
+    #label_arr_crop = label_arr[0:crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
+    #pet_arr_crop = pet_arr[0:crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
+    image_arr_crop = image_arr[
+        startz:startz+crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    label_arr_crop = label_arr[
+        startz:startz+crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    pet_arr_crop = pet_arr[
+        startz:startz+crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+  else:
+    image_arr_crop = image_arr[
+        startz:startz+crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    label_arr_crop = label_arr[
+        startz:startz+crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    pet_arr_crop = pet_arr[
+        startz:startz+crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    #image_arr_crop = image_arr[0:crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
+    #label_arr_crop = label_arr[0:crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
+    #pet_arr_crop = pet_arr[0:crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
+  sitk_label = sitk.GetImageFromArray(label_arr_crop)
+  image = sitk.GetImageFromArray(image_arr_crop)
+  image.SetOrigin(img.GetOrigin())
+  image.SetSpacing(img.GetSpacing())
+  sitk_label.SetOrigin(label.GetOrigin())
+  sitk_label.SetSpacing(label.GetSpacing())
+  new_pet = sitk.GetImageFromArray(pet_arr_crop)
+  new_pet.SetOrigin(pet.GetOrigin())
+  new_pet.SetSpacing(pet.GetSpacing())
+  # save nrrd
+  return image, new_pet, sitk_label
 
 
 

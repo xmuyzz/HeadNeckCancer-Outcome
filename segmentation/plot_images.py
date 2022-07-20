@@ -23,6 +23,7 @@ def getClosestSlice (centroidSciPy):
     '''
     return int( centroidSciPy[0] ),int( centroidSciPy[1] ),int( centroidSciPy[2] )
 
+
 def show_axis(data, mask, axis, index, slice, bbox, show_bbox, mask_count):
     """
     Plots a single image.
@@ -69,7 +70,6 @@ def show_axis(data, mask, axis, index, slice, bbox, show_bbox, mask_count):
     contours =  measure.find_contours(mask[index], 0.5)
     for n, contour in enumerate(contours):
         axis.plot(contour[:, 1], contour[:, 0], linewidth=line_width*2, color=mask_cmap[mask_count] )
-
 
 
 def plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, com_gt, com_pred, bbox_list, show_bbox, output_dir, distance, dice):

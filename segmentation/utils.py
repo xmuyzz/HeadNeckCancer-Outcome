@@ -144,29 +144,32 @@ def get_arr_from_nrrd(link_to_nrrd, type):
     return sitk_obj, arr, spacing
 
 
-def calculate_metrics(patient_id, spacing, label_arr_org, pred_arr_org, hausdorff_percent, overlap_tolerance, surface_dice_tolerance):
+def calculate_metrics(patient_id, spacing, label_arr_org, pred_arr_org, hausdorff_percent, 
+                      overlap_tolerance, surface_dice_tolerance):
     """
     metric calculation cleanup in test.py.
     """
     result = {}
     result["patient_id"] = patient_id
-    #
     result["precision"] = precision(label_arr_org, pred_arr_org)
     result["recall"] = recall(label_arr_org, pred_arr_org)
     result["jaccard"] = jaccard(label_arr_org, pred_arr_org)
     result["dice"] = dice(label_arr_org, pred_arr_org)
     result["segmentation_score"] = segmentation_score(label_arr_org, pred_arr_org, spacing)
-    bbox_metrics = calculate_bbox_metrics(label_arr_org,
-                                        pred_arr_org,
-                                        spacing)
+    bbox_metrics = calculate_bbox_metrics(label_arr_org, pred_arr_org, spacing)
     result = append_helper(result, ["x_distance", "y_distance", "z_distance", "distance"], bbox_metrics)
-    surface_dice_metrics = surface_dice(label_arr_org,
-                                    pred_arr_org,
-                                    spacing,
-                                    hausdorff_percent, 
-                                    overlap_tolerance,
-                                    surface_dice_tolerance)
-    result = append_helper(result, ["average_surface_distance_gt_to_pr", "average_surface_distance_pr_to_gt", "robust_hausdorff", "overlap_fraction_gt_with_pr", "overlap_fraction_pr_with_gt", "surface_dice"], surface_dice_metrics)
+    surface_dice_metrics = surface_dice(
+        label_arr_org,
+        pred_arr_org,
+        spacing,
+        hausdorff_percent, 
+        overlap_tolerance,
+        surface_dice_tolerance)
+    result = append_helper(
+        result, 
+        ["average_surface_distance_gt_to_pr", "average_surface_distance_pr_to_gt", 
+         "robust_hausdorff", "overlap_fraction_gt_with_pr", "overlap_fraction_pr_with_gt", "surface_dice"], 
+        surface_dice_metrics)
     # get bbox center (indices) of prediction for next segmentation step
     for axes in ["X", "Y", "Z"]:
         for location in ["min", "center", "max", "length"]:
