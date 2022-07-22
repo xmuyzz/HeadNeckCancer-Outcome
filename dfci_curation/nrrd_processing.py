@@ -29,19 +29,22 @@ def combine_mask(proj_dir):
         os.makedirs(output_dir)
     for img_dir in sorted(glob.glob(dfci_img_dir + '/*nrrd')):
         seg_dirs = []
+        seg_IDs = []
         pat_id = img_dir.split('/')[-1].split('_')[1]
-        print(pat_id)
+        #print(pat_id)
         try:
             for folder in os.listdir(dfci_seg_dir):
                 ID = folder.split('_')[1]
                 if ID == pat_id:
-                    print(ID)
+                    #print(ID)
                     for seg_dir in glob.glob(os.path.join(dfci_seg_dir, folder) + '/*nrrd'):
                         seg_ID = seg_dir.split('/')[-1].split('.')[0]
-                        if 'GTV' in seg_ID or 'GTV70' in seg_ID and 'cm' not in seg_ID \
-                            and 'mm' not in seg_ID and '+' not in seg_ID and '**' not in seg_ID:
+                        if 'GTV' in seg_ID and 'cm' not in seg_ID and 'mm' not in seg_ID \
+                        and '+' not in seg_ID and '**' not in seg_ID:
                             seg_dirs.append(seg_dir)
+                            seg_IDs.append(seg_ID)
                     #print(seg_dirs)
+                    print(seg_IDs)
                     combined_mask = combine_structures(
                         dataset='DFCI', 
                         patient_id=pat_id, 
@@ -228,10 +231,10 @@ if __name__ == '__main__':
 
     proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     
-    do_combine_mask = False
-    do_interpolate = False
+    do_combine_mask = True
+    do_interpolate = True
     do_register = True
-    do_crop = False
+    do_crop = True
 
     if do_combine_mask:
         combine_mask(proj_dir)
