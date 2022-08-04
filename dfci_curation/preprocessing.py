@@ -13,7 +13,6 @@ from combine_structures import combine_structures
 from interpolate import interpolate
 from crop import crop_roi, crop_top, crop_top_image_only
 from registration import nrrd_reg_rigid
-import SimpleITK as sitk
 
 
 
@@ -177,11 +176,12 @@ def crop(proj_dir):
     WILL ONLY WORK WITH SPACING = 1,1,3
     """
 
-    roi_size = (160, 160, 64) #x,y,z
+    #roi_size = (160, 160, 64) #x,y,z
+    roi_size = (250, 250, 86) #x,y,z
     img_reg_dir = proj_dir + '/DFCI/img_reg'
     seg_reg_dir = proj_dir + '/DFCI/seg_reg'
-    img_crop_dir = proj_dir + '/DFCI/img_crop'
-    seg_crop_dir = proj_dir + '/DFCI/seg_crop'
+    img_crop_dir = proj_dir + '/DFCI/img_crop2'
+    seg_crop_dir = proj_dir + '/DFCI/seg_crop2'
     if not os.path.exists(img_crop_dir):
         os.makedirs(img_crop_dir)
     if not os.path.exists(seg_crop_dir):
