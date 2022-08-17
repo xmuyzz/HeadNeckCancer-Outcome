@@ -1,16 +1,16 @@
 from nnunet.dataset_conversion.utils import generate_dataset_json
 
 
-
 if __name__ == '__main__':
 
-    base = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data'
-    task_name = 'Task501_PN'
+    #base = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data'
+    base = '/mnt/aertslab/USERS/Zezhong/hecktor2022/DATA2/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data'
+    task_name = 'Task500_ToySet'
     target_base = os.path.join(nnUNet_raw_data, task_name)
     target_imagesTr = os.path.join(target_base, 'imagesTr')
-    target_imagesTs = os.path.join(target_base, 'imagesTs')
+    #target_imagesTs = os.path.join(target_base, 'imagesTs')
     target_labelsTr = os.path.join(target_base, 'labelsTr')
-    target_labelsTs = os.path.join(target_base, 'labelsTs')
+    #target_labelsTs = os.path.join(target_base, 'labelsTs')
     # generating a dataset.json
     generate_dataset_json(
         output_file=os.path.join(target_base, 'dataset.json'), 
