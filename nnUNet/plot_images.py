@@ -34,8 +34,9 @@ def show_axis(data, mask, axis, index, slice, bbox, show_bbox, mask_count):
     axis.axis('off')
     vmax = 3071
     vmin = -1024
-    line_width = 0.6
+    line_width = 1
     Z_unrolled = data.shape[0]
+    colors = ['blue', 'green']
     # flip the array if coronal or sagittal is passed
     # each view will need its own bbox coordinates
     if slice == "axial":
@@ -62,14 +63,20 @@ def show_axis(data, mask, axis, index, slice, bbox, show_bbox, mask_count):
     if show_bbox:
         rect = patches.Rectangle(
             (rect[0] - 0.5, rect[1] - 0.5), rect[2], rect[3], linewidth=line_width, 
-             edgecolor=mask_cmap[mask_count], facecolor='none')
+             edgecolor=mask_cmap[mask_count], 
+             #edgecolor=colors[mask_count],
+             facecolor='none')
         axis.add_patch(rect)
     # plot contours, use 0.5 to exactly capture the midpoint between 0 pixels
     # and 1 pixels.. duh..
     contours =  measure.find_contours(mask[index], 0.5)
     for n, contour in enumerate(contours):
-        axis.plot(contour[:, 1], contour[:, 0], linewidth=line_width*2, color=mask_cmap[mask_count] )
-
+        axis.plot(contour[:, 1],
+                  contour[:, 0], 
+                  linewidth=line_width*2, 
+                  #linewidth=2,
+                  #color=colors[mask_count])
+                  color=mask_cmap[mask_count])
 
 def plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, com_gt, com_pred, 
                 bbox_list, show_bbox, output_dir, distance, dice):
@@ -83,27 +90,18 @@ def plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, c
     fig.set_size_inches(26, 14)
     gs1 = gridspec.GridSpec(3, 5)
     gs1.update(wspace=0.025, hspace=0.15)
-    title = "{}_{}\ndistance: {}mm\ngt bbox center: {} pred bbox center: {}\ndice: {}".format(
-        dataset, patient_id, round(distance, 3), com_gt, com_pred, round(dice, 3))
+    #title = "{}_{}\ndistance: {}mm\ngt bbox center: {} pred bbox center: {}\ndice: {}".format(
+    #    dataset, patient_id, round(distance, 3), com_gt, com_pred, round(dice, 3))
+    title = "{}: {}\n dice: {}, distance: {}mm, gt bbox center: {} pred bbox center: {}".format(
+        dataset, patient_id, round(dice, 3), round(distance, 3), com_gt, com_pred) 
     name = "{}_{}".format(dataset, patient_id)
-    fig.suptitle(title, fontsize=16)
-    axial_idx = [
-        bbox[0], 
-        bbox[0] + int((com_gt[0] - bbox[0])//2.), 
-        com_gt[0], 
-        bbox[1] - int((bbox[1] - com_gt[0])//2.),
-        bbox[1]]
-    coronal_idx = [
-        bbox[2], 
-        bbox[2] + int((com_gt[1] - bbox[2])//2.), 
-        com_gt[1], 
-        bbox[3] - int((bbox[3] - com_gt[1])//2.),
-        bbox[3]]
-    sagittal_idx = [
-        bbox[4], 
-        bbox[4] + int((com_gt[2] - bbox[4])//2.), 
-        com_gt[2], bbox[5] - int((bbox[5] - com_gt[2])//2.),
-        bbox[5]]
+    fig.suptitle(title, fontsize=20, weight='bold')
+    axial_idx = [bbox[0], bbox[0] + int((com_gt[0] - bbox[0])//2.), com_gt[0], 
+                 bbox[1] - int((bbox[1] - com_gt[0])//2.), bbox[1]]
+    coronal_idx = [bbox[2], bbox[2] + int((com_gt[1] - bbox[2])//2.), 
+                   com_gt[1], bbox[3] - int((bbox[3] - com_gt[1])//2.), bbox[3]]
+    sagittal_idx = [bbox[4], bbox[4] + int((com_gt[2] - bbox[4])//2.), 
+        com_gt[2], bbox[5] - int((bbox[5] - com_gt[2])//2.), bbox[5]]
     for i, (mask_arr, bbox) in enumerate(zip(mask_arr_list, bbox_list)):
         if mask_arr is not None:
             for j in range(5):
@@ -123,6 +121,7 @@ def plot_legend(ax, mask_list_names):
     https://stackoverflow.com/questions/14531346/how-to-add-a-text-into-a-rectangle
     """
     rectangles = {}
+    colors = ['blue', 'red']
     for i, mask_name in enumerate(mask_list_names):
         if mask_name is not None:
             rectangles[mask_name] = patches.Rectangle(
@@ -164,7 +163,7 @@ def plot_images(dataset, patient_id, data_arr, gt_arr, pred_arr, output_dir, bbo
         pred_bbox_metrics = bbox_metrics["prediction_bbox_metrics"]
         pred_arr = utils.threshold(pred_arr)
         mask_arr_list = [gt_arr, pred_arr]
-        mask_list_names = ["gt", "pred"]
+        mask_list_names = ["gt", "pd"]
         # bbox and centroid will be calculated based on gt_arr only
         # combined = utils.combine_masks(mask_arr_list)
         gt_bbox = utils.get_bbox(gt_arr)
