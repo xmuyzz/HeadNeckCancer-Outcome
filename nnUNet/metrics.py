@@ -1,8 +1,7 @@
 import numpy as np
 import math
-#
-# import surface_dice_implementation
-# from calculate_bbox_metrics import calculate_bbox_metrics
+import surface_dice_implementation
+from calculate_bbox_metrics import calculate_bbox_metrics
 
 
 def precision(gt, pr):
@@ -102,42 +101,43 @@ def segmentation_score_2(gt, pr, spacing):
     else:
         return np.NaN
 
-# def bbox_distance(gt, pr, spacing):
-#     return calculate_bbox_metrics(gt, pr, spacing)
+def bbox_distance(gt, pr, spacing):
 
-# def surface_dice(gt, pr, spacing, hausdorff_percent, overlap_tolerance, surface_dice_tolerance):
-#     """
-#         gt: numpy array of ground truth
-#         pr: numpy array of prediction
-#         spacing: list of z,y,x spacing in mm (from util func)
-#         hausdorff_percent: percentile at which to calculate the Hausdorff distance (which is usually calculated as the maximum distance)
-#         overlap_tolerance: float (mm) of what is considered as "overlap"
-#         surface_dice_tolerance: float (mm) same as overlap tolerance but used for surface dice calculation
-#     """
-#     gt = gt.astype(np.bool)
-#     pr = pr.astype(np.bool)
-#     #
-#     surface_distances = surface_dice_implementation.compute_surface_distances( gt, pr, spacing)
-#     #
-#     average_surface_distance_gt_to_pr,average_surface_distance_pr_to_gt = surface_dice_implementation.compute_average_surface_distance( surface_distances)
-#     #
-#     robust_hausdorff = surface_dice_implementation.compute_robust_hausdorff(
-#     surface_distances, hausdorff_percent)
-#     #
-#     overlap_fraction_gt_with_pr, overlap_fraction_pr_with_gt =  surface_dice_implementation.compute_surface_overlap_at_tolerance(
-#     surface_distances, overlap_tolerance)
-#     #
-#     surface_dice = surface_dice_implementation.compute_surface_dice_at_tolerance(
-#     surface_distances, surface_dice_tolerance)
+     return calculate_bbox_metrics(gt, pr, spacing)
 
-#     return {
-#         "average_surface_distance_gt_to_pr": average_surface_distance_gt_to_pr,
-#         "average_surface_distance_pr_to_gt": average_surface_distance_pr_to_gt,
-#         "robust_hausdorff": robust_hausdorff,
-#         "overlap_fraction_gt_with_pr": overlap_fraction_gt_with_pr,
-#         "overlap_fraction_pr_with_gt": overlap_fraction_pr_with_gt,
-#         "surface_dice": surface_dice
-#     }
+def surface_dice(gt, pr, spacing, hausdorff_percent, overlap_tolerance, surface_dice_tolerance):
+     """
+         gt: numpy array of ground truth
+         pr: numpy array of prediction
+         spacing: list of z,y,x spacing in mm (from util func)
+         hausdorff_percent: percentile at which to calculate the Hausdorff distance (which is usually calculated as the maximum distance)
+         overlap_tolerance: float (mm) of what is considered as "overlap"
+         surface_dice_tolerance: float (mm) same as overlap tolerance but used for surface dice calculation
+     """
+     gt = gt.astype(np.bool)
+     pr = pr.astype(np.bool)
+     #
+     surface_distances = surface_dice_implementation.compute_surface_distances( gt, pr, spacing)
+     #
+     average_surface_distance_gt_to_pr,average_surface_distance_pr_to_gt = surface_dice_implementation.compute_average_surface_distance( surface_distances)
+     #
+     robust_hausdorff = surface_dice_implementation.compute_robust_hausdorff(
+     surface_distances, hausdorff_percent)
+     #
+     overlap_fraction_gt_with_pr, overlap_fraction_pr_with_gt =  surface_dice_implementation.compute_surface_overlap_at_tolerance(
+     surface_distances, overlap_tolerance)
+     #
+     surface_dice = surface_dice_implementation.compute_surface_dice_at_tolerance(
+     surface_distances, surface_dice_tolerance)
+
+     return {
+         "average_surface_distance_gt_to_pr": average_surface_distance_gt_to_pr,
+         "average_surface_distance_pr_to_gt": average_surface_distance_pr_to_gt,
+         "robust_hausdorff": robust_hausdorff,
+         "overlap_fraction_gt_with_pr": overlap_fraction_gt_with_pr,
+         "overlap_fraction_pr_with_gt": overlap_fraction_pr_with_gt,
+         "surface_dice": surface_dice
+     }
 
 # backup dice function
 # https://github.com/deepmind/surface-distance/blob/master/surface_distance/metrics.py
