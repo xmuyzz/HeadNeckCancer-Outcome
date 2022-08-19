@@ -22,7 +22,7 @@ def getClosestSlice(centroidSciPy):
     0, 1, 2
     axial = 0, Saggital = 2, coronal= 1
     '''
-    return int( centroidSciPy[0] ),int( centroidSciPy[1] ),int( centroidSciPy[2] )
+    return int(centroidSciPy[0]), int(centroidSciPy[1]), int(centroidSciPy[2])
 
 
 def show_axis(data, mask, axis, index, slice, bbox, show_bbox, mask_count):
@@ -78,7 +78,7 @@ def show_axis(data, mask, axis, index, slice, bbox, show_bbox, mask_count):
                   #color=colors[mask_count])
                   color=mask_cmap[mask_count])
 
-def plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, com_gt, com_pred, 
+def plot_figure(dataset, patient_id, tumor_type, data_arr, mask_arr_list, mask_list_names, com_gt, com_pred, 
                 bbox_list, show_bbox, output_dir, distance, dice):
     """
     makes 3x5 plots: Axial, sagittal, coronal at the following intervals of the
@@ -92,9 +92,9 @@ def plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, c
     gs1.update(wspace=0.025, hspace=0.15)
     #title = "{}_{}\ndistance: {}mm\ngt bbox center: {} pred bbox center: {}\ndice: {}".format(
     #    dataset, patient_id, round(distance, 3), com_gt, com_pred, round(dice, 3))
-    title = "{}: {}\n dice: {}, distance: {}mm, gt bbox center: {} pred bbox center: {}".format(
-        dataset, patient_id, round(dice, 3), round(distance, 3), com_gt, com_pred) 
-    name = "{}_{}".format(dataset, patient_id)
+    title = "{}: {} {}\n dice: {}, distance: {}mm, gt bbox center: {} pred bbox center: {}".format(
+        dataset, patient_id, tumor_type, round(dice, 3), round(distance, 3), com_gt, com_pred) 
+    name = "{}_{}_{}".format(dataset, patient_id, tumor_type)
     fig.suptitle(title, fontsize=20, weight='bold')
     axial_idx = [bbox[0], bbox[0] + int((com_gt[0] - bbox[0])//2.), com_gt[0], 
                  bbox[1] - int((bbox[1] - com_gt[0])//2.), bbox[1]]
@@ -109,7 +109,7 @@ def plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, c
                 show_axis(data_arr, mask_arr, plt.subplot(gs1[5+j]), coronal_idx[j], "coronal", bbox, show_bbox, i)
                 show_axis(data_arr, mask_arr, plt.subplot(gs1[10+j]), sagittal_idx[j], "sagittal", bbox, show_bbox, i)
     plot_legend(plt.subplot(gs1[0]), mask_list_names)
-    fig.savefig(os.path.join(output_dir, name + '.png'), dpi=200)
+    fig.savefig(os.path.join(output_dir, name + '.png'), dpi=300)
     plt.cla()
     plt.clf()
     plt.close("all")
@@ -135,7 +135,7 @@ def plot_legend(ax, mask_list_names):
             va='center', annotation_clip=False)
 
 
-def plot_images(dataset, patient_id, data_arr, gt_arr, pred_arr, output_dir, bbox_flag, bbox_metrics, dice):
+def plot_images(dataset, patient_id, tumor_type, data_arr, gt_arr, pred_arr, output_dir, bbox_flag, bbox_metrics, dice):
     """
     Plots 15 different views of a given patient imaging data.
     # bbox metrics from distance calculation
@@ -185,10 +185,10 @@ def plot_images(dataset, patient_id, data_arr, gt_arr, pred_arr, output_dir, bbo
         assert gt_bbox_metrics["X"]["min"] == gt_bbox[4], "bbox calc incorrect"
         assert gt_bbox_metrics["X"]["max"] == gt_bbox[5], "bbox calc incorrect"
         # plot
-        plot_figure(dataset, patient_id, data_arr, mask_arr_list, mask_list_names, com_gt, 
+        plot_figure(dataset, patient_id, tumor_type, data_arr, mask_arr_list, mask_list_names, com_gt, 
                 com_pred, [gt_bbox, pred_bbox], bbox_flag, output_dir, bbox_metrics["distance"], dice)
 
-        print ("{}_{} saved".format(dataset, patient_id))
+        #print ("{}_{} saved".format(dataset, patient_id))
     except Exception as e:
         print ("Error in {}_{}, {}".format(dataset, patient_id, e))
 
