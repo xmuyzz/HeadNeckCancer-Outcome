@@ -10,7 +10,6 @@ from utils import threshold, get_spacing, calculate_metrics
 from plot_images import plot_images
 
 
-
 def visualize_seg(img_path, gt_path, pr_path, output_dir):
     """
     Test segmentation model and save prediction results
@@ -53,18 +52,18 @@ def visualize_seg(img_path, gt_path, pr_path, output_dir):
                         surface_dice_tolerance=5)    
                     dice = round(dice, 3)
                     # plot 5x3 views
-#                    plot_images(
-#                        dataset='Hecktor',
-#                        patient_id=patient_id,
-#                        tumor_type=tumor_type,
-#                        data_arr=img_arr,
-#                        gt_arr=gt_arr,
-#                        pred_arr=pr_arr,
-#                        output_dir=output_dir, 
-#                        bbox_flag=True,
-#                        bbox_metrics=bbox_metrics,
-#                        dice=dice)
-#                    print ("{}, dice: {}".format(patient_id, dice))
+                    plot_images(
+                        dataset='Hecktor',
+                        patient_id=patient_id,
+                        tumor_type=tumor_type,
+                        data_arr=img_arr,
+                        gt_arr=gt_arr,
+                        pred_arr=pr_arr,
+                        output_dir=output_dir, 
+                        bbox_flag=True,
+                        bbox_metrics=bbox_metrics,
+                        dice=dice)
+                    print ("{}, dice: {}".format(patient_id, dice))
                 except Exception as e:
                     print(patient_id, e)
 
