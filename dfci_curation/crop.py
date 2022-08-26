@@ -213,95 +213,92 @@ def crop_top(patient_id, img_dir, seg_dir, crop_shape, return_type, output_img_d
         Exception if an error occurs.
     """
    
-    try:
-        # get image, arr, and spacing
-        image_obj, image_arr, image_spacing, image_origin = get_arr_from_nrrd(img_dir, 'image')
-        label_obj, label_arr, label_spacing, label_origin = get_arr_from_nrrd(seg_dir, 'label')
-        #assert image_arr.shape==label_arr.shape, "image & label shape do not match!"
-        
-        # get center. considers all blobs
-        bbox = get_bbox(label_arr)
-        # returns center point of the label array bounding box
-        Z, Y, X = int(bbox[9]), int(bbox[10]), int(bbox[11]) 
-        #print('Original Centroid: ', X, Y, Z)
-        
-        #find origin translation from label to image
-        print('image origin: ', image_origin, 'label origin: ', label_origin)
-        origin_dif = tuple(np.subtract(label_origin, image_origin).astype(int))
-        #print('origin difference: ', origin_dif)
-        
-        X_shift, Y_shift, Z_shift = tuple(np.add((X, Y, Z), np.divide(origin_dif, (1, 1, 3)).astype(int)))
-        #print('Centroid shifted:', X_shift, Y_shift, Z_shift)
-        
-        ## Return top 25 rows of 3D volume, centered in x-y space / start at anterior (y=0)?
-        #print('image_arr shape:', image_arr.shape)
-        c, y, x = image_arr.shape
-        
-        ## Get center of mass to center the crop in Y plane
-        mask_arr = np.copy(image_arr) 
-        mask_arr[mask_arr > -500] = 1
-        mask_arr[mask_arr <= -500] = 0
-        mask_arr[mask_arr >= -500] = 1 
-        #print('mask_arr min and max:', np.amin(mask_arr), np.amax(mask_arr))
-        centermass = ndimage.measurements.center_of_mass(mask_arr) # z,x,y   
-        cpoint = c - crop_shape[2]//2
-        #print('cpoint, ', cpoint)
-        centermass = ndimage.measurements.center_of_mass(mask_arr[cpoint, :, :])   
-        #print('center of mass: ', centermass)
-        startx = int(centermass[0] - crop_shape[0]//2)
-        starty = int(centermass[1] - crop_shape[1]//2)      
-        #startx = x//2 - crop_shape[0]//2       
-        #starty = y//2 - crop_shape[1]//2
-        startz = int(c - crop_shape[2])
-        #print('start X, Y, Z: ', startx, starty, startz)
-        # cut bottom slices
-        image_arr = image_arr[30:, :, :]
-        label_arr = label_arr[30:, :, :]
-        if startz < 0:
-            image_arr = np.pad(
-                image_arr,
-                ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
-                'constant', 
-                constant_values=-1024)
-            label_arr = np.pad(
-                label_arr,
-                ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
-                'constant', 
-                constant_values=0)
-            image_arr_crop = image_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
-            label_arr_crop = label_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
-        else:
-            image_arr_crop = image_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
-            label_arr_crop = label_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
-        #print('Returning bottom rows')
-        
-        output_img = os.path.join(output_img_dir, '{}.nrrd'.format(patient_id))
-        output_seg = os.path.join(output_seg_dir, '{}.nrrd'.format(patient_id))
-        
-        ## Clean up Label ##
-        ## Binarize and Clean up stray pixels
-        label_arr_crop = np.rint(label_arr_crop).astype(int)
-        #print('sum for orig array:', label_arr_crop.sum())
-        sitk_label = sitk.GetImageFromArray(label_arr_crop)
-        sitk_label = sitk.BinaryMorphologicalOpening(sitk_label, [1, 1, 0])
-        sitk_label = sitk.BinaryMorphologicalClosing(sitk_label, [1, 1, 0])
-        label_arr_crop = sitk.GetArrayFromImage(sitk_label)
-        #print('sum for cleaned up array:', label_arr_crop.sum())
-        
-        # save nrrd
-        image_crop_sitk = generate_sitk_obj_from_npy_array(
-            label_obj, image_arr_crop, resize=False, output_dir=output_img)
-        #print('Saving image cropped')
-        label_crop_sitk = generate_sitk_obj_from_npy_array(
-            label_obj, label_arr_crop, resize=False, output_dir=output_seg)
-        #print('Saving label cropped')
-        if return_type == 'sitk_object':
-            return image_crop_sitk, label_crop_sitk
-        elif return_type == 'numpy_array':
-            return image_arr_crop, label_arr_crop
+    # get image, arr, and spacing
+    image_obj, image_arr, image_spacing, image_origin = get_arr_from_nrrd(img_dir, 'image')
+    label_obj, label_arr, label_spacing, label_origin = get_arr_from_nrrd(seg_dir, 'label')
+    #assert image_arr.shape==label_arr.shape, "image & label shape do not match!"
+    
+    # get center. considers all blobs
+    bbox = get_bbox(label_arr)
+    # returns center point of the label array bounding box
+    Z, Y, X = int(bbox[9]), int(bbox[10]), int(bbox[11]) 
+    #print('Original Centroid: ', X, Y, Z)
+    
+    #find origin translation from label to image
+    print('image origin: ', image_origin, 'label origin: ', label_origin)
+    origin_dif = tuple(np.subtract(label_origin, image_origin).astype(int))
+    #print('origin difference: ', origin_dif)
+    
+    X_shift, Y_shift, Z_shift = tuple(np.add((X, Y, Z), np.divide(origin_dif, (1, 1, 3)).astype(int)))
+    #print('Centroid shifted:', X_shift, Y_shift, Z_shift)
+    
+    ## Return top 25 rows of 3D volume, centered in x-y space / start at anterior (y=0)?
+    #print('image_arr shape:', image_arr.shape)
+    c, y, x = image_arr.shape
+    
+    ## Get center of mass to center the crop in Y plane
+    mask_arr = np.copy(image_arr) 
+    mask_arr[mask_arr > -500] = 1
+    mask_arr[mask_arr <= -500] = 0
+    mask_arr[mask_arr >= -500] = 1 
+    #print('mask_arr min and max:', np.amin(mask_arr), np.amax(mask_arr))
+    centermass = ndimage.measurements.center_of_mass(mask_arr) # z,x,y   
+    cpoint = c - crop_shape[2]//2
+    #print('cpoint, ', cpoint)
+    centermass = ndimage.measurements.center_of_mass(mask_arr[cpoint, :, :])   
+    #print('center of mass: ', centermass)
+    startx = int(centermass[0] - crop_shape[0]//2)
+    starty = int(centermass[1] - crop_shape[1]//2)      
+    #startx = x//2 - crop_shape[0]//2       
+    #starty = y//2 - crop_shape[1]//2
+    startz = int(c - crop_shape[2])
+    #print('start X, Y, Z: ', startx, starty, startz)
+    # cut bottom slices
+    image_arr = image_arr[30:, :, :]
+    label_arr = label_arr[30:, :, :]
+    if startz < 0:
+        image_arr = np.pad(
+            image_arr,
+            ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
+            'constant', 
+            constant_values=-1024)
+        label_arr = np.pad(
+            label_arr,
+            ((abs(startz)//2, abs(startz)//2), (0, 0), (0, 0)), 
+            'constant', 
+            constant_values=0)
+        image_arr_crop = image_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+        label_arr_crop = label_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    else:
+        image_arr_crop = image_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+        label_arr_crop = label_arr[0:crop_shape[2], starty:starty+crop_shape[1], startx:startx+crop_shape[0]]
+    #print('Returning bottom rows')
+    
+    output_img = os.path.join(output_img_dir, '{}.nrrd'.format(patient_id))
+    output_seg = os.path.join(output_seg_dir, '{}.nrrd'.format(patient_id))
+    
+    ## Clean up Label ##
+    ## Binarize and Clean up stray pixels
+    label_arr_crop = np.rint(label_arr_crop).astype(int)
+    #print('sum for orig array:', label_arr_crop.sum())
+    sitk_label = sitk.GetImageFromArray(label_arr_crop)
+    sitk_label = sitk.BinaryMorphologicalOpening(sitk_label, [1, 1, 0])
+    sitk_label = sitk.BinaryMorphologicalClosing(sitk_label, [1, 1, 0])
+    label_arr_crop = sitk.GetArrayFromImage(sitk_label)
+    #print('sum for cleaned up array:', label_arr_crop.sum())
+    
+    # save nrrd
+    image_crop_sitk = generate_sitk_obj_from_npy_array(
+        label_obj, image_arr_crop, resize=False, output_dir=output_img)
+    #print('Saving image cropped')
+    label_crop_sitk = generate_sitk_obj_from_npy_array(
+        label_obj, label_arr_crop, resize=False, output_dir=output_seg)
+    #print('Saving label cropped')
+    if return_type == 'sitk_object':
+        return image_crop_sitk, label_crop_sitk
+    elif return_type == 'numpy_array':
+        return image_arr_crop, label_arr_crop
 
-    except Exception as e:
-        print ("Error in {}, {}".format(patient_id, e))
         
 
 

@@ -170,14 +170,13 @@ def crop(proj_dir, tumor_type='pn'):
     WILL ONLY WORK WITH SPACING = 1,1,3
     """
 
-    roi_size = (172, 172, 76) #x,y,z
-    size_str = '172 x 172 x 76'
+    roi_size = (160, 160, 64) #x,y,z
     img_reg_dir = os.path.join(proj_dir, 'TCIA/img_reg')
     seg_pn_reg_dir = os.path.join(proj_dir, 'TCIA/pn_seg_reg')
     seg_p_reg_dir = os.path.join(proj_dir, 'TCIA/p_seg_reg')
     seg_n_reg_dir = os.path.join(proj_dir, 'TCIA/n_seg_reg')
-    img_crop_dir = proj_dir + '/TCIA/img_crop'
-    seg_pn_crop_dir = proj_dir + '/TCIA/seg_pn_crop'
+    img_crop_dir = proj_dir + '/TCIA/img_crop_160x160x64'
+    seg_pn_crop_dir = proj_dir + '/TCIA/seg_pn_crop_160x160x64'
     seg_p_crop_dir = proj_dir + '/TCIA/seg_p_crop'
     seg_n_crop_dir = proj_dir + '/TCIA/seg_n_crop'
     if not os.path.exists(img_crop_dir):
@@ -212,17 +211,17 @@ def crop(proj_dir, tumor_type='pn'):
                 count += 1
                 print(count, img_id)
                 img_ids.append(img_id)
-#                try:
-#                    image_obj, label_obj = crop_top(
-#                        patient_id=img_id,
-#                        img_dir=img_dir,
-#                        seg_dir=seg_dir,
-#                        crop_shape=roi_size,
-#                        return_type='sitk_object',
-#                        output_img_dir=img_crop_dir,
-#                        output_seg_dir=seg_crop_dir)
-#                except Exception as e:
-#                    print(e, 'crop failed!')
+                try:
+                    image_obj, label_obj = crop_top(
+                        patient_id=img_id,
+                        img_dir=img_dir,
+                        seg_dir=seg_dir,
+                        crop_shape=roi_size,
+                        return_type='sitk_object',
+                        output_img_dir=img_crop_dir,
+                        output_seg_dir=seg_crop_dir)
+                except Exception as e:
+                    print(e, 'crop failed!')
     for img_dir in img_reg_dirs:
         img_id = img_dir.split('/')[-1].split('.')[0]
         if img_id not in img_ids:

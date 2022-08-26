@@ -94,7 +94,6 @@ def plot_figure(dataset, patient_id, tumor_type, data_arr, mask_arr_list, mask_l
     #    dataset, patient_id, round(distance, 3), com_gt, com_pred, round(dice, 3))
     title = "{}: {} {}\n dice: {}, distance: {}mm, gt bbox center: {} pred bbox center: {}".format(
         dataset, patient_id, tumor_type, round(dice, 3), round(distance, 3), com_gt, com_pred) 
-    name = "{}_{}_{}".format(dataset, patient_id, tumor_type)
     fig.suptitle(title, fontsize=20, weight='bold')
     axial_idx = [bbox[0], bbox[0] + int((com_gt[0] - bbox[0])//2.), com_gt[0], 
                  bbox[1] - int((bbox[1] - com_gt[0])//2.), bbox[1]]
@@ -109,6 +108,7 @@ def plot_figure(dataset, patient_id, tumor_type, data_arr, mask_arr_list, mask_l
                 show_axis(data_arr, mask_arr, plt.subplot(gs1[5+j]), coronal_idx[j], "coronal", bbox, show_bbox, i)
                 show_axis(data_arr, mask_arr, plt.subplot(gs1[10+j]), sagittal_idx[j], "sagittal", bbox, show_bbox, i)
     plot_legend(plt.subplot(gs1[0]), mask_list_names)
+    name = patient_id + '_dice' + str(f'{dice:.3f}')
     fig.savefig(os.path.join(output_dir, name + '.png'), dpi=300)
     plt.cla()
     plt.clf()

@@ -180,18 +180,18 @@ def crop(proj_dir):
     WILL ONLY WORK WITH SPACING = 1,1,3
     """
 
-    roi_size = (172, 172, 76) #x,y,z
-    size_str = '172 x 172 x 76'
-    img_dirs = [i for i in sorted(glob.glob(dfci_img_dir + '/*nrrd'))]
-    seg_dirs = [i for i in sorted(glob.glob(dfci_seg_dir + '/*nrrd'))]
-    img_crop_dir = proj_dir + '/DFCI/img_crop'
-    seg_crop_dir = proj_dir + '/DFCI/seg_crop'
+    crop_shape = (172, 172, 76) #x,y,z
+    img_reg_dir = proj_dir + '/DFCI/img_reg'
+    seg_reg_dir = proj_dir + '/DFCI/seg_reg'
+    img_crop_dir = proj_dir + '/DFCI/img_crop_172x172x76'
+    seg_crop_dir = proj_dir + '/DFCI/seg_crop_172x172x76'
     if not os.path.exists(img_crop_dir):
         os.makedirs(img_crop_dir)
     if not os.path.exists(seg_crop_dir):
         os.makedirs(seg_crop_dir)
     img_dirs = [i for i in sorted(glob.glob(img_reg_dir + '/*nrrd'))]
     seg_dirs = [i for i in sorted(glob.glob(seg_reg_dir + '/*nrrd'))]
+    img_ids = []
     for img_dir in img_dirs:
         img_id = img_dir.split('/')[-1].split('.')[0]
         for seg_dir in seg_dirs:
@@ -203,22 +203,20 @@ def crop(proj_dir):
                         patient_id=img_id,
                         img_dir=img_dir,
                         seg_dir=seg_dir,
-                        crop_shape=roi_size,
+                        crop_shape=crop_shape,
                         return_type='sitk_object',
-                        output_img_folder=output_img_folder,
-                        output_seg_folder=output_seg_folder)
-                except:
-                    print('crop failed!')
-    for img_dir in img_dirs:
+                        output_img_dir=img_crop_dir,
+                        output_seg_dir=seg_crop_dir)
+                except Exception as e:
+                    print(e)
+    for i, img_dir in enumerate(img_dirs):
         img_id = img_dir.split('/')[-1].split('.')[0]
         if img_id not in img_ids:
-            count += 1
-            print(count)
-            print(img_id)
+            print(i, img_id)
             try:
                 image_obj, label_obj = crop_top_image_only(
-                    patient_id,
-                    img_dir,
+                    patient_id=img_id,
+                    img_dir=img_dir,
                     crop_shape=roi_size,
                     return_type='sitk_object',
                     output_img_folder=output_img_folder)
@@ -231,9 +229,9 @@ if __name__ == '__main__':
 
     proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     
-    do_combine_mask = True
-    do_interpolate = True
-    do_register = True
+    do_combine_mask = False
+    do_interpolate = False
+    do_register = False
     do_crop = True
 
     if do_combine_mask:
@@ -242,6 +240,8 @@ if __name__ == '__main__':
         interpolate_img(proj_dir)    
     if do_register:
         registration(proj_dir)
+    if do_crop:
+        crop(proj_dir)
 
 
     
