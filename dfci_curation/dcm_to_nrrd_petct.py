@@ -65,6 +65,7 @@ def load_dicom(slice_list):
     return slices, img_spacing, img_direction, img_origin
 
 
+
 def getPixelArray(slices):
 
     image = np.stack([s.pixel_array for s in slices])
@@ -83,6 +84,77 @@ def getPixelArray(slices):
             image[slice_number] = image[slice_number].astype(np.int16)
         image[slice_number] += np.int16(intercept)
     return np.array(image, dtype=np.int16)
+
+
+
+def load_dicom_pet(slice_list):
+
+    """
+    Load the PET scans in given folder path
+    """
+    slices = [pydicom.read_file(s) for s in slice_list] 
+    try:
+        # seriesDesc = slices[0].SeriesDescription
+        slices.sort(key=lambda x: float(x.ImagePositionPatient[2]))
+        try:
+            slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
+        except:
+            slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
+    except Exception as e:
+        print (e)
+        #print 'No position found for image', slice_list[0]
+        return []
+    for s in slices:
+        s.SliceThickness = slice_thickness
+    img_spacing = [float(slices[0].PixelSpacing[0]), float(slices[0].PixelSpacing[1]), slice_thickness]
+    img_direction = [int(i) for i in slices[0].ImageOrientationPatient] + [0, 0, 1]
+    img_origin = slices[0].ImagePositionPatient
+    
+    return slices, img_spacing, img_direction, img_origin
+    
+
+
+def getPixelArray_pet(slices, image_format):
+
+    image = np.stack([s.pixel_array for s in slices])
+    # Convert to int16 (from sometimes int16),
+    # should be possible as values should always be low enough (<32k)
+    image = image.astype(np.float32)
+    if image_format=='pet':
+        # Set outside-of-scan pixels to 0
+        # The intercept is usually -1024, so air is approximately 0
+        image[image == -2000] = 0
+        # Convert to Hounsfield units (HU)
+        for slice_number in range(len(slices)):
+            intercept = slices[slice_number].RescaleIntercept
+            slope = slices[slice_number].RescaleSlope
+            if slope != 1:
+                image[slice_number] = slope * image[slice_number].astype(np.float64)
+                #image[slice_number] = image[slice_number].astype(np.int16)
+            image[slice_number] += np.float32(intercept)
+            try:
+                tracer_activity = float(slices[1].RadiopharmaceuticalInformationSequence[0].RadionuclideTotalDose) * 2**(-(float(slices[1].AcquisitionTime) - float(slices[1].RadiopharmaceuticalInformationSequence[0].RadiopharmaceuticalStartTime))/float(slices[1].RadiopharmaceuticalInformationSequence[0].RadionuclideHalfLife))
+            #print("tracer activity:", tracer_activity)
+                if slices[1].PatientWeight == '':
+                    print("Patient weight not available, using default weights")
+                    if slices[1].PatientSex == 'M':
+                        bw = 90 * 1000 # based off CDC / NCHS website for avg male body weight in US
+                    else:
+                        bw = 78 * 1000 # based off CDC / NCHS website for avg female body weight in US
+                else:
+                    bw = float(slices[1].PatientWeight) * 1000
+                #bsa=float(slices[1].PatientWeight)**0.425 * (float(slices[1].PatientSize)*100)**0.725 * 0.007184
+                #print("BSA:", bsa)
+                #print("array slice sum:", np.sum(image[slice_number]))
+                image[slice_number] = image[slice_number] * bw / tracer_activity
+                #print("array slice sum after suv conversion:", np.sum(image[slice_number]))
+                # For PET: check Units BQML calculate SUV based on Kim et al, Journal Nuc Med 1994; USING GE HEALTHCARE CALC [AcquisitionTime instead of SeriesTime d/t anonymization]
+                #USE SUV-bw (b/c some pts had no height recorded)= GE healthcare calc (PET image Pixels) * (weight in grams) / (injected dose actual activity); actual activity = [tracer_activity * 2^( -(scan_time – measured_time) / half_life)
+                #alt: SUV-bsa; same but instead of weight use weight^0.425 * height^0.725 * 0.007184;
+            except:
+                print("No tracer activity in meta data; cannot calculate SUV")
+        print("array sum:", np.sum(image), " array (suv) max:", np.amax(image))
+    return np.array(image, dtype=np.float32)
 
 
 def run_core(dicom_dir, image_format):
@@ -114,6 +186,7 @@ def run_core(dicom_dir, image_format):
     imgSitk.SetOrigin(img_origin)
     
     return imgSitk
+
 
 
 def dcm_to_nrrd(dataset, patient_id, dicom_dir, output_dir, image_format, save=True):
@@ -150,34 +223,17 @@ def dcm_to_nrrd(dataset, patient_id, dicom_dir, output_dir, image_format, save=T
 if __name__ == '__main__':
 
     input_dir = '/mnt/aertslab/USERS/Christian/For_Ben'
-    output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/dfci_data_test'
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/dfci_data'
     
-    pat_ids = []
     for folder in os.listdir(input_dir):
         print(folder)
         pat_id = str(folder)
         dicom_dir = os.path.join(input_dir, folder)
-        try:
-            dcm_to_nrrd(
-                dataset='dfci',
-                patient_id=pat_id,
-                dicom_dir=dicom_dir,
-                output_dir=output_dir,
-                image_format='ct',
-                save=True)
-        except Exception as e:
-            print(pat_id, e)
-            pat_ids.append(pat_id)
-    print('problematic dcm data:', pat_ids)
-
-
-
-
-
-
-
-
-
+        dcm_to_nrrd(
+            dataset='dfci',
+            patient_id=pat_id,
+            dicom_dir=dicom_dir,
+            output_dir=output_dir,
+            image_format='ct',
+            save=True)
 
