@@ -110,19 +110,16 @@ def visualize_seg(img_path, gt_path, pr_path, output_dir):
 
 if __name__ == '__main__':
     
-#    proj_dir = '/mnt/aertslab/USERS/Zezhong/hecktor2022/DATA2'
-#    img_path = proj_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task501_Hecktor/imagesTs'
-#    gt_path = proj_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task501_Hecktor/labelsTs'
-#    pr_path = proj_dir + '/results_test'
-#    output_dir = proj_dir + '/visualization/Task501'
-    
-    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet'
-    img_path = proj_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task505_PN/imagesTs2'
-    gt_path = proj_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task505_PN/labelsTs2'
-    pr_path = proj_dir + '/all_results/Task505/test2'
-    output_dir = proj_dir + '/visualization/Task505/test2'
+    task = 'Task505_PN'
+    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data'
+    img_path = proj_dir + '/' + task + '/imagesTs2'
+    gt_path = proj_dir + '/' + task + '/labelsTs2'
+    pr_path = proj_dir + '/' + task + '/predsTs2'
+    output_dir = proj_dir + '/' + task + '/output/visual'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+    else:
+        print('folder exists!')
 
     visualize_seg(img_path, gt_path, pr_path, output_dir)
 

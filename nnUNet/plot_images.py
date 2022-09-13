@@ -163,7 +163,7 @@ def plot_images(dataset, patient_id, tumor_type, data_arr, gt_arr, pred_arr, out
         pred_bbox_metrics = bbox_metrics["prediction_bbox_metrics"]
         pred_arr = utils.threshold(pred_arr)
         mask_arr_list = [gt_arr, pred_arr]
-        mask_list_names = ["gt", "pd"]
+        mask_list_names = ["gt", "pred"]
         # bbox and centroid will be calculated based on gt_arr only
         # combined = utils.combine_masks(mask_arr_list)
         gt_bbox = utils.get_bbox(gt_arr)
