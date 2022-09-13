@@ -43,8 +43,8 @@ def prepare_nnUNet_data(proj_dir, data_type):
         img_crop_dir = proj_dir + '/TCIA/img_crop'
         seg_crop_dir = proj_dir + '/TCIA/seg_pn_crop'
     elif data_type == 'external_test':
-        img_crop_dir = proj_dir + '/DFCI/img_crop_172x172x76'
-        seg_crop_dir = proj_dir + '/DFCI/seg_crop_172x172x76'
+        img_crop_dir = proj_dir + '/DFCI/new_curation/img_crop_172x172x76'
+        seg_crop_dir = proj_dir + '/DFCI/new_curation/seg_crop_172x172x76'
     img_crop_dirs = [i for i in sorted(glob.glob(img_crop_dir + '/*nrrd'))]
     seg_crop_dirs = [i for i in sorted(glob.glob(seg_crop_dir + '/*nrrd'))]
     img_dirs = []

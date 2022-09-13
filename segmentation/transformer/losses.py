@@ -1,3 +1,6 @@
+from torch import nn
+import torch
+from utils import compute_per_channel_dice
 
 
 class AsymmetricUnifiedFocalLoss(nn.Module):
@@ -34,8 +37,6 @@ class AsymmetricUnifiedFocalLoss(nn.Module):
       else:
         return asymmetric_ftl + asymmetric_fl
 
-from torch import nn
-
 
 class AsymmetricFocalTverskyLoss(nn.Module):
     """This is the implementation for binary segmentation.
@@ -62,15 +63,18 @@ class AsymmetricFocalTverskyLoss(nn.Module):
         axis = identify_axis(y_true.size())
         # Calculate true positives (tp), false negatives (fn) and false positives (fp)     
         tp = torch.sum(y_true * y_pred, axis=axis)
-        fn = torch.sum(y_true * (1-y_pred), axis=axis)
-        fp = torch.sum((1-y_true) * y_pred, axis=axis)
-        dice_class = (tp + self.epsilon)/(tp + self.delta*fn + (1-self.delta)*fp + self.epsilon)
+        fn = torch.sum(y_true * (1 - y_pred), axis=axis)
+        fp = torch.sum((1 - y_true) * y_pred, axis=axis)
+        dice_class = (tp + self.epsilon)/(tp + self.delta*fn + (1 - self.delta)*fp + self.epsilon)
+        #print('dice class:', dice_class.size())
         # Calculate losses separately for each class, only enhancing foreground class
-        back_dice = (1-dice_class[:,0])
-        fore_dice = (1-dice_class[:,1:]) * torch.pow(1-dice_class[:,1:], -self.gamma)
+        back_dice = (1 - dice_class[:, 0])
+        #fore_dice = (1-dice_class[:,1:]) * torch.pow(1-dice_class[:,1:], -self.gamma)
+        fore_dice = (1 - dice_class[:, 1]) * torch.pow(1 - dice_class[:, 1], -self.gamma)
         #print(fore_dice.size())
         # Average class scores
-        loss = torch.mean(torch.stack([back_dice,fore_dice[:, 0], fore_dice[:, 1]], axis=-1))
+        #loss = torch.mean(torch.stack([back_dice,fore_dice[:, 0], fore_dice[:, 1]], axis=-1))
+        loss = torch.mean(torch.stack([back_dice, fore_dice], axis=-1))
         return loss
 
 
@@ -95,26 +99,16 @@ class AsymmetricFocalLoss(nn.Module):
         y_pred = torch.clamp(y_pred, self.epsilon, 1. - self.epsilon)
         cross_entropy = -y_true * torch.log(y_pred)
         # Calculate losses separately for each class, only suppressing background class
-        back_ce = torch.pow(1 - y_pred[:,0,:,:], self.gamma) * cross_entropy[:,0,:,:]
-        back_ce =  (1 - self.delta) * back_ce
-        fore_ce = cross_entropy[:,1:,:,:]
+        back_ce = torch.pow(1 - y_pred[:, 0, :, :], self.gamma) * cross_entropy[:, 0, :, :]
+        back_ce = (1 - self.delta) * back_ce
+        fore_ce = cross_entropy[:, 1:, :, :]
         fore_ce = self.delta * fore_ce
-        #print(fore_ce.size())
-        loss = torch.mean(torch.sum(torch.stack([back_ce, fore_ce[:,0], fore_ce[:,1]], axis=-1), axis=-1))
+        #print('force ce:', fore_ce.size())
+        #print('back ce:', back_ce.size())
+        #loss = torch.mean(torch.sum(torch.stack([back_ce, fore_ce[:,0], fore_ce[:,1]], axis=-1), axis=-1))
+        loss = torch.mean(torch.sum(torch.stack([back_ce, fore_ce[:, 0]], axis=-1), axis=-1))
 
         return loss
-
-
-class DiceLoss(_AbstractDiceLoss):
-    """Computes Dice Loss according to https://arxiv.org/abs/1606.04797.
-    For multi-class segmentation `weight` parameter can be used to assign different weights per class.
-    The input to the loss function is assumed to be a logit and will be normalized by the Sigmoid function.
-    """
-    def __init__(self, weight=None, normalization='sigmoid'):
-        super().__init__(weight, normalization)
-
-    def dice(self, input, target, weight):
-        return compute_per_channel_dice(input, target, weight=self.weight)
 
 
 # Helper function to enable loss function to be flexibly used for
@@ -158,5 +152,23 @@ class _AbstractDiceLoss(nn.Module):
         per_channel_dice = self.dice(input, target, weight=self.weight)
         # average Dice score across all channels/classes
         return 1. - torch.mean(per_channel_dice)
+
+
+class DiceLoss(_AbstractDiceLoss):
+    """Computes Dice Loss according to https://arxiv.org/abs/1606.04797.
+    For multi-class segmentation `weight` parameter can be used to assign different weights per class.
+    The input to the loss function is assumed to be a logit and will be normalized by the Sigmoid function.
+    """
+    def __init__(self, weight=None, normalization='sigmoid'):
+        super().__init__(weight, normalization)
+
+    def dice(self, input, target, weight):
+        return compute_per_channel_dice(input, target, weight=self.weight)
+
+
+
+
+
+
 
 
