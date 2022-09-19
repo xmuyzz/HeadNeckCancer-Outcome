@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def combine_structures(dataset, patient_id, data_type, mask_arr, path_to_reference_image_nrrd, 
+def combine_structures(patient_id, mask_arr, path_to_reference_image_nrrd, 
                        binary, return_type, output_dir=""):
     
     """
@@ -40,7 +40,7 @@ def combine_structures(dataset, patient_id, data_type, mask_arr, path_to_referen
     # ensure that all images have the same shape
     for a, b in itertools.combinations(arrays, 2):
         assert a.shape == b.shape, "masks do not have the same shape"
-        assert a.max() == b.max(), "masks do not have the same max value (1)"
+        #assert a.max() == b.max(), "masks do not have the same max value (1)"
         assert a.min() == b.min(), "masks do not have the same min value (0)"
     combined = np.zeros(arrays[0].shape)
     # prioritizes maks based on order in list
@@ -78,7 +78,7 @@ def combine_structures(dataset, patient_id, data_type, mask_arr, path_to_referen
     # write new nrrd
     if output_dir != "":
         writer = sitk.ImageFileWriter()
-        writer.SetFileName(os.path.join(output_dir, "{}_{}_{}.nrrd".format(dataset, patient_id, data_type)))
+        writer.SetFileName(os.path.join(output_dir, "{}.nrrd".format(patient_id)))
         writer.SetUseCompression(True)
         writer.Execute(new_sitk_object)
 

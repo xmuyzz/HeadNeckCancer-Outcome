@@ -110,7 +110,7 @@ def visualize_seg(img_path, gt_path, pr_path, output_dir):
 
 if __name__ == '__main__':
     
-    task = 'Task505_PN'
+    task = 'Task507_PN'
     proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data'
     img_path = proj_dir + '/' + task + '/imagesTs2'
     gt_path = proj_dir + '/' + task + '/labelsTs2'

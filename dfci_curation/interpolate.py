@@ -80,9 +80,9 @@ def interpolate(dataset, patient_id, data_type, path_to_nrrd, interpolation_type
         writer.SetUseCompression(True)
         writer.Execute(new_sitk_object)
 
-    if return_type == 'sitk_object':
+    if return_type == 'sitk_obj':
         return new_sitk_object
-    elif return_type == 'numpy_array':
+    elif return_type == 'np_array':
         return sitk.GetArrayFromImage(new_sitk_object)
 
 

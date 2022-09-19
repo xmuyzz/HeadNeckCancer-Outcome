@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def nrrd_reg_rigid(patient_id, input_dir, output_dir, fixed_img_dir):
+def nrrd_reg_rigid(patient_id, moving_image, output_dir, fixed_image, label_only):
     
     """
     Registers two CTs together: effectively registers CT-PET and PET to the CT-sim and saves 3 files + 1 transform
@@ -30,8 +30,8 @@ def nrrd_reg_rigid(patient_id, input_dir, output_dir, fixed_img_dir):
             path_image = os.path.join(input_dir,file)            
             print("image path: ",path_image)"""
 
-    fixed_image = sitk.ReadImage(fixed_img_dir, sitk.sitkFloat32) # PATH FOR FIXED IMAGE
-    moving_image = sitk.ReadImage(input_dir, sitk.sitkFloat32)
+    #fixed_image = sitk.ReadImage(fixed_img_dir, sitk.sitkFloat32) # PATH FOR FIXED IMAGE
+    #moving_image = sitk.ReadImage(input_dir, sitk.sitkFloat32)
     transform = sitk.CenteredTransformInitializer(
         fixed_image, 
         moving_image, 
@@ -54,14 +54,15 @@ def nrrd_reg_rigid(patient_id, input_dir, output_dir, fixed_img_dir):
     registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
     registration_method.SetInitialTransform(transform)
     final_transform = registration_method.Execute(fixed_image, moving_image)                               
-    moving_image_resampled = sitk.Resample(
-        moving_image, 
-        fixed_image, 
-        final_transform, 
-        sitk.sitkLinear, 
-        0.0, 
-        moving_image.GetPixelID())
-    sitk.WriteImage(moving_image_resampled, os.path.join(output_dir, patient_id + '.nrrd'))
+    if not label_only:
+        moving_image_resampled = sitk.Resample(
+            moving_image, 
+            fixed_image, 
+            final_transform, 
+            sitk.sitkLinear, 
+            0.0, 
+            moving_image.GetPixelID())
+        sitk.WriteImage(moving_image_resampled, os.path.join(output_dir, patient_id + '.nrrd'))
     
     return fixed_image, moving_image, final_transform
 
