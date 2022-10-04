@@ -38,7 +38,7 @@ def parse_opts():
     parser.add_argument('--input_data_type', default='masked_img', type=str, help='(masked_img|raw_img')
     parser.add_argument('--i_kfold', default=0, type=int, help='(0|1|2|3|4)')
     parser.add_argument('--cnn_name', default='resnet101', type=str, help='resnet (18|34|50|152|200)')
-    parser.add_argument('--_cox_model', default='DeepHit', type=str, help='cox model')
+    parser.add_argument('--_cox_model', default='CoxPH', type=str, help='cox model')
     parser.add_argument('--batch_size', default=8, type=int, help='Batch size')
     parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
     parser.add_argument('--epoch', default=3, type=int, help='Epoch')

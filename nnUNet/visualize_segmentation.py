@@ -110,18 +110,18 @@ def visualize_seg(img_path, gt_path, pr_path, output_dir):
 
 if __name__ == '__main__':
     
-    task = 'Task507_PN'
+    task = 'Task508_P_N'
     proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data'
     img_path = proj_dir + '/' + task + '/imagesTs2'
     gt_path = proj_dir + '/' + task + '/labelsTs2'
     pr_path = proj_dir + '/' + task + '/predsTs2'
-    output_dir = proj_dir + '/' + task + '/output/visual'
+    output_dir = proj_dir + '/' + task + '/output/visual2'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     else:
         print('folder exists!')
 
-    visualize_seg(img_path, gt_path, pr_path, output_dir)
+    visualize_seg2(img_path, gt_path, pr_path, output_dir)
 
 
 

@@ -15,8 +15,8 @@ def prepare_nnUNet_data(proj_dir, data_dir, data_type):
     # make paths to store data
     img_tr_dir = data_dir + '/imagesTr'
     seg_tr_dir = data_dir + '/labelsTr'
-    img_ts_dir = data_dir + '/imagesTs1'
-    seg_ts_dir = data_dir + '/labelsTs1'
+    img_ts_dir = data_dir + '/imagesTs'
+    seg_ts_dir = data_dir + '/labelsTs'
     img_ts2_dir = data_dir + '/imagesTs2'
     seg_ts2_dir = data_dir + '/labelsTs2'
     img_ts3_dir = data_dir + '/imagesTs3'
@@ -47,7 +47,7 @@ def prepare_nnUNet_data(proj_dir, data_dir, data_type):
     # get df
     if data_type == 'train':
         img_crop_dir = proj_dir + '/TCIA/img_crop'
-        seg_crop_dir = proj_dir + '/TCIA/seg_pn_crop'
+        seg_crop_dir = proj_dir + '/TCIA/seg_p_n_crop'
     elif data_type == 'test2':
         img_crop_dir = proj_dir + '/DFCI/new_curation/img_crop_172x172x76'
         seg_crop_dir = proj_dir + '/DFCI/new_curation/seg_crop_172x172x76'
@@ -86,6 +86,7 @@ def prepare_nnUNet_data(proj_dir, data_dir, data_type):
     
     # prepare data
     if data_type == 'train':
+        print(df)
         df_tr, df_ts = train_test_split(df, test_size=0.2)
         
         ### train dataset
@@ -186,8 +187,8 @@ def prepare_nnUNet_data(proj_dir, data_dir, data_type):
 
 if __name__ == '__main__':
 
-    task = 'Task507_PN'
-    data_type = 'test3'
+    task = 'Task508_P_N'
+    data_type = 'train'
     proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     data_dir = proj_dir + '/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data/' + task
 
