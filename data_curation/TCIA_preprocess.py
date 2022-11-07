@@ -27,10 +27,10 @@ def transfer_file(raw_data_dir, proj_dir):
     CHUM_dir = raw_data_dir + '/CHUM_files/interpolated'
     MDACC_dir = raw_data_dir + '/MDACC_files/interpolated'
     PMH_dir = raw_data_dir + '/PMH_files/interpolated'
-    dst_img_dir = proj_dir + '/TCIA/imgs'
-    pn_seg_dir = proj_dir + '/TCIA/pn_segs'
-    p_seg_dir = proj_dir + '/TCIA/p_segs'
-    n_seg_dir = proj_dir + '/TCIA/n_segs'
+    dst_img_dir = proj_dir + '/HKTR_TCIA_DFCI/TCIA/interp_img'
+    pn_seg_dir = proj_dir + '/HKTR_TCIA_DFCI/TCIA/interp_seg_pn'
+    p_seg_dir = proj_dir + '/HKTR_TCIA_DFCI/TCIA/interp_seg_p'
+    n_seg_dir = proj_dir + '/HKTR_TCIA_DFCI/TCIA/interp_seg_n'
     if not os.path.exists(dst_img_dir):
         os.makedirs(dst_img_dir)
     if not os.path.exists(pn_seg_dir):
@@ -43,14 +43,14 @@ def transfer_file(raw_data_dir, proj_dir):
     # dataset
     count = 0
     #data_dirs = [CHUM_dir, CHUS_dir, MDACC_dir, PMH_dir]
-    #cohorts = ['CHUM', 'CHUS', 'MDACC', 'PMH']
+    #cohorts = ['CHUM', 'CHUS', 'MDA', 'PMH']
     data_dirs = [MDACC_dir, PMH_dir]
-    cohorts = ['MDACC', 'PMH']
+    cohorts = ['MDA', 'PMH']
     for data_dir, cohort in zip(data_dirs, cohorts):
         for path in sorted(glob.glob(data_dir + '/*nrrd')):
             if cohort in ['CHUM', 'CHUS']:
                 ID = path.split('/')[-1].split('_')[1].split('-')[2]
-            elif cohort == 'MDACC':
+            elif cohort == 'MDA':
                 ID = path.split('/')[-1].split('_')[1].split('-')[2][1:]
             elif cohort == 'PMH':
                 ID = path.split('/')[-1].split('_')[1].split('-')[1][2:]
@@ -60,8 +60,8 @@ def transfer_file(raw_data_dir, proj_dir):
             print(count, fn)
             if data_type == 'ct':
                 dst_dir = dst_img_dir + '/' + fn
-                print(path)
-                print(dst_dir)
+                #print(path)
+                #print(dst_dir)
                 shutil.copyfile(path, dst_dir)
             elif data_type == 'label':
                 label = path.split('/')[-1].split('_')[3]
@@ -71,12 +71,12 @@ def transfer_file(raw_data_dir, proj_dir):
                     dst_dir = n_seg_dir + '/' + fn
                 elif label == 'p':
                     dst_dir = p_seg_dir + '/' + fn
-                    print(path)
-                    print(dst_dir) 
+                    #print(path)
+                    #print(dst_dir) 
                     shutil.copyfile(path, dst_dir)
 
 
-def get_PN_seg(proj_dir):
+def get_PN_seg(proj_dir, image_format):
     """
     1) combine p_seg and n_seg to a 4d nii image;
     2) p_seg and n_seg in different channels;
@@ -87,14 +87,15 @@ def get_PN_seg(proj_dir):
     Raise issues:
         none
     """
-    p_seg_path = proj_dir + '/TCIA/seg_p'
-    n_seg_path = proj_dir + '/TCIA/seg_n'
-    pn_seg_path = proj_dir + '/TCIA/seg_pn'
-    p_n_seg_path = proj_dir + '/TCIA/seg_p_n'
-    img_path = proj_dir + '/TCIA/img'
+    p_seg_path = proj_dir + '/TCIA/itp_seg_p'
+    n_seg_path = proj_dir + '/TCIA/itp_seg_n'
+    pn_seg_path = proj_dir + '/TCIA/itp_seg_pn'
+    p_n_seg_path = proj_dir + '/TCIA/itp_seg_p_n'
+    img_path = proj_dir + '/TCIA/itp_img'
     if not os.path.exists(p_n_seg_path):
         os.makedirs(p_n_seg_path)
     fns = [i for i in sorted(os.listdir(pn_seg_path))]
+    print(fns)
     for i, fn in enumerate(fns):
         try:
             pat_id = fn.split('.')[0]
@@ -124,26 +125,18 @@ def get_PN_seg(proj_dir):
                 n_seg = np.zeros(shape=arr.shape)
             # combine P and N to one np arr
             p_n_seg = np.add(p_seg, n_seg).astype(int)
+            # some voxels from P and N have overlap
+            p_n_seg[p_n_seg == 3] = 1
             sitk_obj = sitk.GetImageFromArray(p_n_seg)
             sitk_obj.SetSpacing(img.GetSpacing())
             sitk_obj.SetOrigin(img.GetOrigin())
             # write new nrrd
             writer = sitk.ImageFileWriter()
-            writer.SetFileName(p_n_seg_path + '/' + pat_id + '.nrrd')
+            writer.SetFileName(p_n_seg_path + '/' + pat_id + '.' + image_format)
             writer.SetUseCompression(True)
             writer.Execute(sitk_obj)
         except Exception as e:
             print(pat_id, e)
-        #print(pn_seg.shape)
-        #pn_seg = np.transpose(pn_seg, axes=[1, 2, 0])
-        #print(pn_seg.shape)
-        #save_format = 'nii'
-        #if save_format == 'nii':
-        #    pn_seg = nib.Nifti1Image(pn_seg, affine=np.eye(4))
-        #    nib.save(pn_seg, p_n_seg_path + '/' + seg_id + '.nii.gz')
-        #elif save_format == 'nrrd':
-        #    nrrd.write(p_n_seg_path + '/' + seg_id + '.nrrd', pn_seg)
-
 
 
 def registration(proj_dir, tumor_type):
@@ -339,12 +332,13 @@ def crop(proj_dir, tumor_type):
 
 if __name__ == '__main__':
 
-    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
+    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/HKTR_TCIA_DFCI'
     raw_data_dir = '/mnt/aertslab/DATA/HeadNeck/HN_PETSEG/curated' 
+    image_format = 'nii.gz'
     do_transfer_file = False
     do_register = False
-    do_crop = True
-    do_get_PN_seg = False
+    do_crop = False
+    do_get_PN_seg = True
 
 
     if do_transfer_file:
@@ -360,7 +354,7 @@ if __name__ == '__main__':
                 proj_dir, 
                 tumor_type=tumor_type)
     if do_get_PN_seg:
-        get_PN_seg(proj_dir)
+        get_PN_seg(proj_dir, image_format)
 
 
 

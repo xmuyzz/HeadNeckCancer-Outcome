@@ -1,15 +1,16 @@
 from functools import partial
 from tensorflow.keras.layers import Input, LeakyReLU, Add, UpSampling3D, Activation, SpatialDropout3D, Conv3D
-from tensorflow.keras.engine import Model
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 #from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
 import tensorflow_addons as tfa ## New - keras instance norm appears to be deprecated
 from tensorflow_addons.layers import InstanceNormalization ## New
-from .metrics import weighted_dice_coefficient_loss
-try:
-    from keras.engine import merge
-except ImportError:
-    from keras.layers.merge import concatenate
+from model_metrics import weighted_dice_coefficient_loss
+from tensorflow.keras.layers import concatenate
+#try:
+#    from keras.engine import merge
+#except ImportError:
+#    from keras.layers.merge import concatenate
 
 
 def create_convolution_block(input_layer, n_filters, batch_normalization=False, kernel=(3, 3, 3), 
@@ -57,8 +58,8 @@ def create_context_module(input_layer, n_level_filters, dropout_rate=0.3, data_f
 
 
 def isensee2017_model(input_shape=(4, 128, 128, 128), n_base_filters=16, depth=5, dropout_rate=0.3,   
-                      n_segmentation_levels=3, n_labels=4, optimizer=Adam, initial_learning_rate=5e-4,
-                      loss_function=weighted_dice_coefficient_loss, activation_name="sigmoid"):
+                      n_segmentation_levels=3, n_labels=2, optimizer=Adam, initial_learning_rate=5e-4,
+                      loss_function=weighted_dice_coefficient_loss, activation_name='softmax'):
     """
     This function builds a model proposed by Isensee et al. for the BRATS 2017 competition:
     https://www.cbica.upenn.edu/sbia/Spyridon.Bakas/MICCAI_BraTS/MICCAI_BraTS_2017_proceedings_shortPapers.pdf

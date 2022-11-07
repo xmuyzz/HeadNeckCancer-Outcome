@@ -23,12 +23,10 @@ from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ReduceLROnPl
 
 
 def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, epochs, dl_train, 
-          dl_tune, dl_val, dl_tune_cb, df_tune, dl_baseline, cnn_name, _cox_model, model_depth, 
-          lr, target_c_index=0.8, eval_model='best_model', scheduler_type='lambda', train_logs=True, 
+          dl_val, dl_val_cb, dl_baseline, cnn_name, cox, model_depth, lr, target_c_index=0.8, 
+          eval_model='best_model', scheduler_type='lambda', train_logs=True, 
           plot_c_indices=True, fit_model=True):
     
-    # choose callback functions
-    #---------------------------
     # callback: LR scheduler
     lambda1 = lambda epoch: 0.9 ** (epoch // 50)
     optimizer = torch.optim.Adam(cnn_model.parameters(), lr=lr)
@@ -43,70 +41,73 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
             threshold=0.0001, 
             threshold_mode='abs')
     lr_scheduler = LRScheduler(scheduler)
+    
     # callback: metric monitor with c-index
     print(model_dir)
     concordance = Concordance(
         model_dir=model_dir,
         log_dir=log_dir,
         dl_baseline=dl_baseline,
-        df_tune=df_tune,
-        dl_tune_cb=dl_tune_cb,
+        df_tune=df_val,
+        dl_tune_cb=dl_val_cb,
         target_c_index=target_c_index,
         cnn_name=cnn_name,
-        _cox_model=_cox_model,
+        _cox_model=cox,
         model_depth=model_depth,
         lr=lr)
+    
     # callback: early stopping with c-index
-    saved_cpt = os.path.join(log_dir, 'cpt_weights.pt')
     early_stopping = tt.callbacks.EarlyStopping(
         get_score=concordance.get_last_score,
         minimize=False,
         patience=200,
-        file_path=saved_cpt)
+        file_path=log_dir + '/cpt_weights.pt')
+    
     # combine call backs
     callbacks = [concordance, early_stopping, lr_scheduler]
     #callbacks = [lr_scheduler]
+    
     # fit model
     if fit_model:
         my_model = cox_model
         log = my_model.fit_dataloader(
-            dl_train,
+            dl_tr,
             epochs=epochs,
             callbacks=callbacks,
             verbose=True,
-            val_dataloader=dl_tune)
+            val_dataloader=dl_val)
         print('log: \n', log) 
         # save model training curves
         plot = log.plot()
         fig = plot.get_figure()
-        log_fn = str(cnn_name) + str(model_depth) + '_' + 'loss.png'
-        fig.savefig(os.path.join(log_dir, log_fn))
+        log_fn = cnn_name + str(model_depth) + '_' + 'loss.png'
+        fig.savefig(log_dir + '/' + log_fn)
     
     # evalute model on val data
     #--------------------------
-    fn = str(cnn_name) + str(model_depth) + '_c_indexs.npy'
-    c_indexs = np.load(os.path.join(log_dir, fn))
+    fn = cnn_name + str(model_depth) + '_c_indexs.npy'
+    c_indexs = np.load(log_dir + '/' + fn)
     print(c_indexs)
     if eval_model == 'best_model':
         c_index = np.amax(c_indexs)
-        fn = str(cnn_name) + str(model_depth) + '_' + str(c_index) + '_model.pt'
+        fn = cnn_name + str(model_depth) + '_' + str(c_index) + '_model.pt'
         print(fn)
-        if not os.path.exists(os.path.join(model_dir, fn)):
+        if not os.path.exists(model_dir +'/' + fn):
             print('all c-index lower than target!')
-            fn = str(cnn_name) + str(model_depth) + '_final_model.pt'
+            fn = cnn_name + str(model_depth) + '_final_model.pt'
     elif eval_model == 'final_model':
         c_index = c_indexs[-1]
-        fn = str(cnn_name) + str(model_depth) + '_final_model.pt'
+        fn = cnn_name + str(model_depth) + '_final_model.pt'
         print(fn)
-    cox_model.load_net(os.path.join(model_dir, fn))
+    cox_model.load_net(model_dir + '/' + fn))
     if _cox_model == 'CoxPH':
         print('compute baseline hazard for CoxPH!')
         _ = model.compute_baseline_hazards()
     surv = cox_model.predict_surv_df(dl_val)
     fn_surv = cnn_name + str(model_depth) + str(c_index) + 'surv.csv'
-    surv.to_csv(os.path.join(pro_data_dir, fn_surv), index=False)
+    surv.to_csv(pro_data_dir + '/' + fn_surv, index=False)
     # val c-index
-    df_val = pd.read_csv(os.path.join(pro_data_dir, 'df_pn_masked_val0.csv'))
+    df_val = pd.read_csv(pro_data_dir + '/df_pn_masked_val0.csv')
     durations = df_val['death_time'].to_numpy()
     events = df_val['death_event'].to_numpy()
     ev = EvalSurv(
@@ -146,14 +147,14 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
         plt.grid(True)
         plt.tight_layout(pad=1.08, h_pad=None, w_pad=None, rect=None)
         fn = cnn_name + str(model_depth) + '_c_index.png'
-        plt.savefig(os.path.join(log_dir, fn), format='png', dpi=600)
+        plt.savefig(log_dir + '/' + fn, format='png', dpi=600)
         plt.close()
 
     # write txt files
     #----------------
     if train_logs:
         log_fn = 'train_logs.text'
-        write_path = os.path.join(log_dir, log_fn)
+        write_path = log_dir + '/' + log_fn
         with open(write_path, 'a') as f:
             f.write('\n-------------------------------------------------------------------')
             f.write('\ncreated time: %s' % strftime('%Y-%m-%d %H:%M:%S', localtime()))
@@ -168,5 +169,7 @@ def train(output_dir, pro_data_dir, log_dir, model_dir, cnn_model, cox_model, ep
             f.write('\n')
             f.close()
         print('successfully save train logs.')
+
+
 
 

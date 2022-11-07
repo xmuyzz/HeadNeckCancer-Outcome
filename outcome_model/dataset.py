@@ -17,10 +17,8 @@ from get_data.get_dir import get_dir
 from opts import parse_opts
 
 
-if __name__ == '__main__':
-    
-    opt = parse_opts()
-    
+def main(opt):
+
     run_max_bbox = False
     run_data = False
     split_data_only = False
@@ -70,6 +68,11 @@ if __name__ == '__main__':
                         input_img_type=opt.input_data_type)
 
 
+if __name__ == '__main__':
+
+    opt = parse_opts()
+
+    main(opt)
 
 
 

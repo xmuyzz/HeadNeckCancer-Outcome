@@ -11,6 +11,7 @@ import torch.optim as optim
 import sklearn
 from sklearn.model_selection import KFold
 from volumentations import *
+import SimpleITK as sitk
 import nibabel as nib
 from monai.losses import DiceLoss
 from monai.inferers import sliding_window_inference
@@ -28,9 +29,19 @@ from losses import (AsymmetricUnifiedFocalLoss, AsymmetricFocalTverskyLoss,
     AsymmetricFocalLoss, DiceLoss, _AbstractDiceLoss)
 
 
-def main(data_dir, model_dir, batch_size, load_saved_model, img_shape):
+def main(proj_dir, batch_size, load_saved_model, img_shape):
     
-    train_dl, val_dl = get_data_loader(data_dir, batch_size) 
+    device = torch.device('cuda:0')
+    
+    model_dir = proj_dir + '/seg_model/torch_model/saved_model'
+    output_dir = proj_dir + '/seg_model/torch_model/output'    
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    train_dl, val_dl = get_data_loader(proj_dir, batch_size) 
+   
     print('load model...')
     model = SwinUNETR(
         img_size=(160, 160, 64),
@@ -139,18 +150,14 @@ def main(data_dir, model_dir, batch_size, load_saved_model, img_shape):
 if __name__ == '__main__':
 
     proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
-    data_dir = proj_dir + '/nnUNet/nnUNet_raw_data_base/nnUNet_raw_data/Task506_PN_crop'
-    model_dir = proj_dir + '/seg_model/Task506/saved_model'
-    output_dir = proj_dir + '/seg_model/Task506/output'
     load_saved_model = False
     batch_size = 1
     img_shape = (160, 160, 64)
     num_workers = 1
     total_epoch = 50
     lr = 0.0001
-    device = torch.device("cuda:0")
 
-    main(data_dir, model_dir, batch_size, load_saved_model, img_shape)
+    main(proj_dir, batch_size, load_saved_model, img_shape)
 
 
 

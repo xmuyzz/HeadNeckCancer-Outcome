@@ -11,102 +11,7 @@ import cv2
 import matplotlib as plt
 
 
-def crop_top_test(img, pet, label, crop_shape):
-  
-  # get image, arr, and spacing
-  image_arr = GetArrayFromImage(img)
-  image_spacing = img.GetSpacing()
-  image_origin = img.GetOrigin()
-  label_arr = GetArrayFromImage(label)
-  label_spacing = label.GetSpacing()
-  label_origin = label.GetOrigin()
-  pet_arr = GetArrayFromImage(pet)
-  pet_spacing = pet.GetSpacing()
-  pet_origin = pet.GetOrigin()
-  
-  c,y,x = image_arr.shape
-  ## Get center of mass to center the crop in Y plane
-  mask_arr = np.copy(image_arr)
-  mask_arr[mask_arr > -500] = 1
-  mask_arr[mask_arr <= -500] = 0
-  print("mask_arr min and max:", np.amin(mask_arr), np.amax(mask_arr))
-  mask_arr = np.array(mask_arr)
-
-  # find center of just connected components
-  labels_in = np.array(mask_arr[76,:,:], dtype = np.uint8 )
-  image = np.array(image_arr[76,:,:], dtype = np.uint8 )
-  image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-
-  # find contours in the binary image
-  contours, hierarchy = cv2.findContours(labels_in,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-  biggest = 0
-  index = -1
-  for j,ct in enumerate(contours):
-    circular_area = cv2.contourArea(ct)*np.power(4*np.pi*cv2.contourArea(ct)/(np.power(cv2.arcLength(ct,True),2)),2)
-    if circular_area > biggest:
-      biggest = circular_area
-      index = j
-  image_copy = image.copy()
-  contour = contours[index]
-
-  M = cv2.moments(contour)
-
-  # calculate x,y coordinate of center
-  cX = int(M["m10"] / M["m00"])
-
-  cY = int(M["m01"] / M["m00"])
-
-  centermass = np.array([cX,cY])
-
-  print("center of mass: ", centermass)
-  startx = int(centermass[0] - crop_shape[0]//2)
-  starty = int(centermass[1] - crop_shape[1]//2)
-  startz = int(c - crop_shape[2] - 20 )
-  print("start X,Y,Z: ", startx, starty, startz)
-  if startx < 0:
-    startx = 0
-  if starty < 0:
-    starty = 0
-  if (starty+crop_shape[1] > y):
-    print("yes")
-    starty = starty-((starty+crop_shape[1])-y)
-  if startz < 0:
-    image_arr = np.pad(image_arr,
-                ((0, 0),
-                (abs(startx)//2, abs(startx)//2),
-                (0, 0)), 'constant', constant_values=-1024)
-    label_arr = np.pad(label_arr,
-                ((0, 0),
-                (abs(startx)//2, abs(startx)//2),
-                (0, 0)), 'constant', constant_values=0)
-    pet_arr = np.pad(pet_arr,
-                ((0, 0),
-                (abs(startx)//2, abs(startx)//2),
-                (0, 0)), 'constant', constant_values=0)
-    image_arr_crop = image_arr[startz:startz+crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
-    label_arr_crop = label_arr[startz:startz+crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
-    pet_arr_crop = pet_arr[startz:startz+crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
-  else:
-    image_arr_crop = image_arr[startz:startz+crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
-    label_arr_crop = label_arr[startz:startz+crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
-    pet_arr_crop = pet_arr[startz:startz+crop_shape[2],starty:starty+crop_shape[1],startx:startx+crop_shape[0]]
-
-
-  sitk_label = sitk.GetImageFromArray(label_arr_crop)
-  image = sitk.GetImageFromArray(image_arr_crop)
-  image.SetOrigin(img.GetOrigin())
-  image.SetSpacing(img.GetSpacing())
-  sitk_label.SetOrigin(label.GetOrigin())
-  sitk_label.SetSpacing(label.GetSpacing())
-  new_pet = sitk.GetImageFromArray(pet_arr_crop)
-  new_pet.SetOrigin(pet.GetOrigin())
-  new_pet.SetSpacing(pet.GetSpacing())
-  text = str(c)+" "+str(y)+" "+str(x)+" "+str(startz)+" "+str(starty)+" "+str(startx)
-  # save nrrd
-  return image, new_pet, sitk_label,text
-
-
-def crop_top(patient_id, img_dir, seg_dir, crop_shape, return_type, output_img_dir, 
+def crop_top(patient_id, img, seg, crop_shape, return_type, output_img_dir, 
              output_seg_dir, image_format):
 
     """
@@ -127,12 +32,12 @@ def crop_top(patient_id, img_dir, seg_dir, crop_shape, return_type, output_img_d
     """
     
     # get image, arr, and spacing
-    image_object = sitk.ReadImage(img_dir)
-    image_arr = sitk.GetArrayFromImage(image_object)
-    image_origin = image_object.GetOrigin()
-    label_object = sitk.ReadImage(seg_dir)
-    label_arr = sitk.GetArrayFromImage(label_object)
-    label_origin = label_object.GetOrigin()
+    #image_object = sitk.ReadImage(img_dir)
+    image_arr = sitk.GetArrayFromImage(img)
+    image_origin = img.GetOrigin()
+    #label_object = sitk.ReadImage(seg_dir)
+    label_arr = sitk.GetArrayFromImage(seg)
+    label_origin = seg.GetOrigin()
     #assert image_arr.shape==label_arr.shape, "image & label shape do not match!"
     #print('max seg value:', np.max(label_arr))    
     # get center. considers all blobs
@@ -174,14 +79,14 @@ def crop_top(patient_id, img_dir, seg_dir, crop_shape, return_type, output_img_d
     
     #-----normalize CT data signals-------
     norm_type = 'np_clip'
-    image_arr[image_arr <= -1024] = -1024
+    #image_arr[image_arr <= -1024] = -1024
     ## strip skull, skull UHI = ~700
-    image_arr[image_arr > 700] = 0
+    #image_arr[image_arr > 700] = 0
     ## normalize UHI to 0 - 1, all signlas outside of [0, 1] will be 0;
     if norm_type == 'np_interp':
         image_arr = np.interp(image_arr, [-200, 200], [0, 1])
     elif norm_type == 'np_clip':
-        image_arr = np.clip(image_arr, a_min=-200, a_max=200)
+        image_arr = np.clip(image_arr, a_min=-175, a_max=275)
         MAX, MIN = image_arr.max(), image_arr.min()
         image_arr = (image_arr - MIN) / (MAX - MIN)
 
@@ -208,16 +113,16 @@ def crop_top(patient_id, img_dir, seg_dir, crop_shape, return_type, output_img_d
     output_seg = output_seg_dir + '/' + patient_id + '.' + image_format
     # save image
     img_sitk = sitk.GetImageFromArray(image_arr_crop)
-    img_sitk.SetSpacing(image_object.GetSpacing())
-    img_sitk.SetOrigin(image_object.GetOrigin())
+    img_sitk.SetSpacing(img.GetSpacing())
+    img_sitk.SetOrigin(img.GetOrigin())
     writer = sitk.ImageFileWriter()
     writer.SetFileName(output_img)
     writer.SetUseCompression(True)
     writer.Execute(img_sitk)
     # save label
     seg_sitk = sitk.GetImageFromArray(label_arr_crop)
-    seg_sitk.SetSpacing(label_object.GetSpacing())
-    seg_sitk.SetOrigin(label_object.GetOrigin())
+    seg_sitk.SetSpacing(seg.GetSpacing())
+    seg_sitk.SetOrigin(seg.GetOrigin())
     writer = sitk.ImageFileWriter()
     writer.SetFileName(output_seg)
     writer.SetUseCompression(True)

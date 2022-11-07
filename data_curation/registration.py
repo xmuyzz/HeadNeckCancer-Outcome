@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def nrrd_reg_rigid(patient_id, moving_image, output_dir, fixed_image, image_format):
+def nrrd_reg_rigid(patient_id, moving_img, output_dir, fixed_img, image_format):
     
     """
     Registers two CTs together: effectively registers CT-PET and PET to the CT-sim and saves 3 files + 1 transform
@@ -30,11 +30,11 @@ def nrrd_reg_rigid(patient_id, moving_image, output_dir, fixed_image, image_form
             path_image = os.path.join(input_dir,file)            
             print("image path: ",path_image)"""
 
-    #fixed_image = sitk.ReadImage(fixed_img_dir, sitk.sitkFloat32) # PATH FOR FIXED IMAGE
-    #moving_image = sitk.ReadImage(input_dir, sitk.sitkFloat32)
+    #fixed_img = sitk.ReadImage(fixed_img_dir, sitk.sitkFloat32) # PATH FOR FIXED IMAGE
+    #moving_image = sitk.ReadImage(img_dir, sitk.sitkFloat32)
     transform = sitk.CenteredTransformInitializer(
-        fixed_image, 
-        moving_image, 
+        fixed_img, 
+        moving_img, 
         sitk.Euler3DTransform(), 
         sitk.CenteredTransformInitializerFilter.GEOMETRY)
     #multi-resolution rigid registration using Mutual Information
@@ -53,23 +53,23 @@ def nrrd_reg_rigid(patient_id, moving_image, output_dir, fixed_image, image_form
     registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[2, 1, 0])
     registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
     registration_method.SetInitialTransform(transform)
-    final_transform = registration_method.Execute(fixed_image, moving_image)                               
+    final_transform = registration_method.Execute(fixed_img, moving_img)                               
     
-    img_reg = sitk.Resample(
-        moving_image, 
-        fixed_image, 
+    reg_img = sitk.Resample(
+        moving_img, 
+        fixed_img, 
         final_transform, 
         sitk.sitkLinear, 
         0.0, 
-        moving_image.GetPixelID())
-    #sitk.WriteImage(moving_image_resampled, os.path.join(output_dir, patient_id + '.nrrd'))
-    # write new nrrd
-    writer = sitk.ImageFileWriter()
-    writer.SetFileName(output_dir + '/' + patient_id + '.' + image_format)
-    writer.SetUseCompression(True)
-    writer.Execute(img_reg)
+        moving_img.GetPixelID())
+    
+    if output_dir != '':
+        writer = sitk.ImageFileWriter()
+        writer.SetFileName(output_dir + '/' + patient_id + '.' + image_format)
+        writer.SetUseCompression(True)
+        writer.Execute(reg_img)
 
-    return fixed_image, moving_image, final_transform
+    return reg_img, fixed_img, moving_img, final_transform
 
 
 def bspline_intra_modal_registration(fixed_image, moving_image, fixed_image_mask=None, fixed_points=None, moving_points=None):

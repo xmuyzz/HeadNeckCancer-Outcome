@@ -57,11 +57,14 @@ def get_bbox(mask_data):
     """
     # crop maskData to only the 1's
     # http://stackoverflow.com/questions/31400769/bounding-box-of-numpy-array
-    # maskData order is z,y,x because we already rolled it
+    # maskData order is z, y, x because we already rolled it
+    #print(mask_data.shape)
     Z = np.any(mask_data, axis=(1, 2))
     Y = np.any(mask_data, axis=(0, 2))
     X = np.any(mask_data, axis=(0, 1))
-    #
+    #print(Z)
+    #print(X)
+    #print(Y)
     Z_min, Z_max = np.where(Z)[0][[0, -1]]
     Y_min, Y_max = np.where(Y)[0][[0, -1]]
     X_min, X_max = np.where(X)[0][[0, -1]]

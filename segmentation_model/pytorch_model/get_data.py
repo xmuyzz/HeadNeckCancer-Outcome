@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import sklearn
 from sklearn.model_selection import KFold
 from volumentations import *
+import SimpleITK as sitk
 import nibabel as nib
 from monai import transforms
 from monai.transforms import AsDiscrete, Activations
@@ -29,29 +30,37 @@ class MyDataset(Dataset):
     Raise issues:
         none
     """
-    def __init__(self, data_dir, step, transform):
-        self.data_dir = data_dir
+    def __init__(self, proj_dir, step, transform):
+        self.proj_dir = proj_dir
         self.step = step
         self.transform = transform
         self.img_paths = []
         self.seg_paths = []
         # Load data index
+        tr_img_path = proj_dir + '/HKTR_TCIA_DFCI/TOT/crop_img_160/*nii.gz'
+        tr_seg_path = proj_dir + '/HKTR_TCIA_DFCI/TOT/crop_seg_160/*nii.gz'
         if step == 'train':
-            self.img_paths = [path for path in glob.glob(data_dir + '/imagesTr/' + '*nii.gz')]
-            self.seg_paths = [path for path in glob.glob(data_dir + '/labelsTr/' + '*nii.gz')]
+            self.img_paths = [i for i in sorted(glob.glob(tr_img_path))]
+            self.seg_paths = [i for i in sorted(glob.glob(tr_seg_path))]
         elif step == 'test':
-            self.img_paths = [path for path in glob.glob(data_dir + '/imagesTs/' + '*nii.gz')]
-            self.seg_paths = [path for path in glob.glob(data_dir + '/labelsTs/' + '*nii.gz')]
+            self.img_paths = [i for i in glob.glob(proj_dir + '/TCIA/img_crop_160/*nrrd')]
+            self.seg_paths = [i for i in glob.glob(proj_dir + '/TCIA/seg_pn_crop_160/*nrrd')]
         print('Succesfully loaded {} dataset.'.format(step) + ' '*50)
 
     def __len__(self):
         return len(self.img_paths)
 
     def __getitem__(self, idx):
-        img_path = self.img_paths[idx]
-        seg_path = self.seg_paths[idx]
-        img = np.expand_dims(nib.load(img_path).get_fdata(), axis=3)
-        seg = np.expand_dims(nib.load(img_path).get_fdata(), axis=3)
+        img_dir = self.img_paths[idx]
+        seg_dir = self.seg_paths[idx]
+        #print(img_dir)
+        #print(seg_dir)
+        img = sitk.ReadImage(img_dir)
+        seg = sitk.ReadImage(seg_dir)
+        img_arr = sitk.GetArrayFromImage(img)
+        seg_arr = sitk.GetArrayFromImage(seg)
+        img = np.expand_dims(img_arr, axis=3)
+        seg = np.expand_dims(seg_arr, axis=3)
         #print(img.shape)
         #print(seg.shape)
         img = img.transpose(3, 0, 1, 2).astype(np.float32)
@@ -63,7 +72,7 @@ class MyDataset(Dataset):
         return img, seg
 
 
-def get_data_loader(data_dir, batch_size):
+def get_data_loader(proj_dir, batch_size):
 
     # augmentation
     train_transform = Compose([
@@ -84,7 +93,7 @@ def get_data_loader(data_dir, batch_size):
         EnsureType(data_type='tensor')])
 
     # load data
-    train_set = MyDataset(data_dir, step='train', transform=train_transform)
+    train_set = MyDataset(proj_dir=proj_dir, step='train', transform=train_transform)
     #test_set = MyDataset(data_dir, step='test', transform=test_transform)
     # train val split 80:20
     num_train = len(train_set)

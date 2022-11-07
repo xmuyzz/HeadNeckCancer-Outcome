@@ -10,24 +10,21 @@ def label(proj_dir, clinical_data_file, save_label):
     
     """
     Create dataframe to store labels;
-
     Args:
         proj_dir {path} -- project path;
         clinical_data_file {csv} -- clinical meta file;
         save_label {str} -- save label;
-
     Returns:
         dataframe;
-
     Raise errors:
         None
-
     """
 
     clinical_data_dir = os.path.join(proj_dir, 'data')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     output_dir = os.path.join(proj_dir, 'output')
-    if not os.path.exists(pro_data_dir): os.mkdir(pro_data_dir)
+    if not os.path.exists(pro_data_dir): 
+        os.mkdir(pro_data_dir)
 
     df = pd.read_csv(os.path.join(pro_data_dir, clinical_data_file))
     # drop duplicates in MDACC cohort, keep first patient that has distant control info
@@ -40,7 +37,6 @@ def label(proj_dir, clinical_data_file, save_label):
     print('total oropharynx patient number:', df.shape[0])
     print('cancer type:', df['diseasesite'])
     cancer_types = df['diseasesite'].to_list()
-
     
     # create patient id
     #------------------
@@ -61,7 +57,6 @@ def label(proj_dir, clinical_data_file, save_label):
         groupids.append(groupid)
         patids.append(patid)
     
-
     # local/regional control event and duration time
     #-----------------------------------------------
     """
@@ -254,21 +249,17 @@ def label(proj_dir, clinical_data_file, save_label):
         elif stage in ['IVA', 'IV', 'IVB', 'Stade IVA', 'Stage IV', 'Stade IVB']:
             stage = 'IV'
         stages.append(stage)
-    
     #print('stage I:', stages.count('I'), stages.count('I')/len(stages))
     #print('stage II:', stages.count('II'), stages.count('II')/len(stages))
     #print('stage III:', stages.count('III'), stages.count('III')/len(stages))
     #print('stage IV:', stages.count('IV'), stages.count('IV')/len(stages))
-
     # sex
     df['gender'].replace(['F'], 'Female', inplace=True)
     df['gender'].replace(['M'], 'Male', inplace=True)
     genders = df['gender'].to_list()
-
     # age
     ages = df['ageatdiag'].to_list()
     #print('age range:', np.max(ages), np.min(ages), np.median(ages))
-    
     # therapeutic combination
     #print(df['therapeuticcombination'].value_counts())
     #print(df['therapeuticcombination'].value_counts(normalize=True))
@@ -283,7 +274,6 @@ def label(proj_dir, clinical_data_file, save_label):
     print('distant time:', len(ds_times))
     print('death_event:', len(death_events))
     print('death time:', len(death_times))
-
     df = pd.DataFrame({
         'group_id': groupids,
         'pat_id': patids,
@@ -299,13 +289,11 @@ def label(proj_dir, clinical_data_file, save_label):
         'stage': stages,
         'gender': genders,
         'age': ages,
-        })
-    
+        }) 
     # save labels to csv files
     df.to_csv(os.path.join(pro_data_dir, save_label), index=False)
     df.to_csv(os.path.join(output_dir, 'tot_label.csv'), index=False)
     print('successfully save label file in csv format!')
-    
     df = df.loc[df['group_id'].isin(['PMH', 'MDACC'])]
     #print(df['stage'].value_counts())
     #print(df['stage'].value_counts(normalize=True))

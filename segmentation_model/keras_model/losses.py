@@ -5,8 +5,6 @@ import tensorflow as tf
 # https://lars76.github.io/neural-networks/object-detection/losses-for-segmentation/
 # https://gist.github.com/jerheff/8cf06fe1df0695806456
 
-
-
 epsilon = 1e-5
 smooth = 1
 

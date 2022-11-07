@@ -50,11 +50,12 @@ def interpolate(patient_id, path_to_nrrd, interpolation_type, new_spacing, retur
     resample.SetOutputPixelType(sitk.sitkFloat32)
     image = resample.Execute(img)
 
-    save_fn = output_dir + '/' + patient_id + '.' + image_format
-    writer = sitk.ImageFileWriter()
-    writer.SetFileName(save_fn)
-    writer.SetUseCompression(True)
-    writer.Execute(image)
+    if output_dir != '':
+        save_fn = output_dir + '/' + patient_id + '.' + image_format
+        writer = sitk.ImageFileWriter()
+        writer.SetFileName(save_fn)
+        writer.SetUseCompression(True)
+        writer.Execute(image)
 
     if return_type == 'sitk_obj':
         return image

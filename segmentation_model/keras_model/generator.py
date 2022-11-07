@@ -74,7 +74,7 @@ class Generator(keras.utils.Sequence):
                         image, label = elastic.run()
                     # affine transformations + crop
                     image, label = self._affine_transform_arr(image, label)
-                    image, label = self._crop_arr(image, label)
+                    #image, label = self._crop_arr(image, label)
                     # noise
                     image = self._pepper_arr(image)
                     if self.blur_label:
@@ -111,8 +111,8 @@ class Generator(keras.utils.Sequence):
                 #print (image.min(), image.max(), image.shape, image.dtype)
                 #print (label.min(), label.max(), label.shape, label.dtype)
                 label = np.rint(label) # added b/c there was slight noise coming in from augmentation-ask Ahmed?
-                if label.min()!=0 or label.max()!=1 or len(np.unique(label))!=2:
-                    print("WARNING!!test CHECK YOUR LABELS at index {}".format(index), "label min: ", label.min(), " label max: ", label.max(), " label unique values: ",np.unique(label))
+                #if label.min() != 0 or label.max() != 1 or len(np.unique(label)) != 2:
+                #    print("WARNING!!test CHECK YOUR LABELS at index {}".format(index), "label min: ", label.min(), " label max: ", label.max(), " label unique values: ",np.unique(label))
 
                 # reshape
                 image = image.reshape(1, *image.shape)
@@ -121,8 +121,7 @@ class Generator(keras.utils.Sequence):
                 image_list.append(image)
                 label_list.append(label)
 
-
-        return np.array(image_list,'float32'), np.array(label_list,'float32')
+        return np.array(image_list, 'float32'), np.array(label_list, 'float32')
 
     def _ensure_binary_label(self, arr):
         """
@@ -137,26 +136,26 @@ class Generator(keras.utils.Sequence):
                    y_shift:y_shift+self.final_shape[1], 
                    x_shift:x_shift+self.final_shape[2]]
 
-    def _crop_arr(self, image, label):
-        """
-        TODO: remove assert statements and put elsewhere more efficient.
-        """
-        #
-        z_diff = image.shape[0] - self.final_shape[0]
-        y_diff = image.shape[1] - self.final_shape[1]
-        x_diff = image.shape[2] - self.final_shape[2]
-        #
-        assert z_diff >= 0, "final shape cannot be bigger the input shape along the z axis"
-        assert y_diff >= 0, "final shape cannot be bigger the input shape along the y axis"
-        assert x_diff >= 0, "final shape cannot be bigger the input shape along the x axis"
-        #
-        z_shift = np.random.randint(0, z_diff+1)
-        y_shift = np.random.randint(0, y_diff+1)
-        x_shift = np.random.randint(0, x_diff+1)
-        #
-        image = self._crop_helper(image, z_shift, y_shift, x_shift)
-        label = self._crop_helper(label, z_shift, y_shift, x_shift)
-        return image, label
+#    def _crop_arr(self, image, label):
+#        """
+#        TODO: remove assert statements and put elsewhere more efficient.
+#        """
+#        #
+#        z_diff = image.shape[0] - self.final_shape[0]
+#        y_diff = image.shape[1] - self.final_shape[1]
+#        x_diff = image.shape[2] - self.final_shape[2]
+#        #
+#        assert z_diff >= 0, "final shape cannot be bigger the input shape along the z axis"
+#        assert y_diff >= 0, "final shape cannot be bigger the input shape along the y axis"
+#        assert x_diff >= 0, "final shape cannot be bigger the input shape along the x axis"
+#        #
+#        z_shift = np.random.randint(0, z_diff + 1)
+#        y_shift = np.random.randint(0, y_diff + 1)
+#        x_shift = np.random.randint(0, x_diff + 1)
+#        #
+#        image = self._crop_helper(image, z_shift, y_shift, x_shift)
+#        label = self._crop_helper(label, z_shift, y_shift, x_shift)
+#        return image, label
 
     def _blur_arr(self, label):
         """
@@ -241,8 +240,8 @@ class Generator(keras.utils.Sequence):
         rot_ang_red = self.red_rot_shr*rot_ang
         shr_ang = self.shr_ang_rng
         shr_ang_red = self.red_rot_shr*shr_ang
-        scale_lower = 1-self.scale_rng
-        scale_upper = 1+self.scale_rng
+        scale_lower = 1 - self.scale_rng
+        scale_upper = 1 + self.scale_rng
         return {
              # + or -
             "z_rot": np.deg2rad(np.random.uniform(-rot_ang, rot_ang)),

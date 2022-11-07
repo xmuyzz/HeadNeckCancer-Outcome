@@ -21,14 +21,11 @@ def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
 
     """
     Model evaluation
-    
     Args:
         run_type {str} -- val or test.
-    
     Returns:
         C-index {float} -- Time dependent concordance index.
         Surv {pd.df} -- survival prediction.
-    
     """
 
     # load model
@@ -68,15 +65,12 @@ def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
     print('c-index:', c_index)
 
     # Brier score
-    #--------------
     """plot IPCW Brier score for a given set of times. 
     """
     time_grid = np.linspace(durations.min(), durations.max(), 100)
     _ = ev.brier_score(time_grid).plot()
     #time_grid = np.linspace(0, sim_test[0].max())
-
-    """ 
-    The two time-dependent scores above can be integrated over time to 
+    """The two time-dependent scores above can be integrated over time to 
     produce a single score Graf et al. 1999. 
     In practice this is done by numerical integration over a defined time_grid.
     """
@@ -84,7 +78,6 @@ def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
     print('brier_score:', round(brier_score, 3))
 
     # Negative binomial log-likelihood
-    #-----------------------------------
     ev.nbll(time_grid).plot()
     plt.ylabel('NBLL')
     _ = plt.xlabel('Time')

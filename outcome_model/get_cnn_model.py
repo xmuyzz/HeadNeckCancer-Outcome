@@ -198,7 +198,6 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
             override_params={'num_classes': n_classes}, 
             in_channels=in_channels)
     
-
     if torch.cuda.is_available():
         model.cuda()
 

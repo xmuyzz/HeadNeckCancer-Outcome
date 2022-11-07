@@ -87,7 +87,6 @@ def getPixelArray(slices):
 
 def run_core(dicom_dir, image_format):
 
-    print ('Processing patient ', dicom_dir)
     #dicomFiles = sorted(glob.glob(dicom_dir + '/*.dcm'))
     dicomFiles = sorted(glob.glob(dicom_dir + '/[!D]*'))
     dicomCheck = list(map(lambda sub:int(''.join([i for i in sub if i.isnumeric()])), dicomFiles)) 
@@ -116,7 +115,7 @@ def run_core(dicom_dir, image_format):
     return imgSitk
 
 
-def dcm_to_nrrd(dataset, patient_id, dicom_dir, output_dir, image_format, save=True):
+def dcm_to_nrrd(patient_id, dicom_dir, output_dir, image_format, save=True):
     """
     Converts a stack of slices into a single .nrrd file and saves it.
     Args:
@@ -131,37 +130,102 @@ def dcm_to_nrrd(dataset, patient_id, dicom_dir, output_dir, image_format, save=T
     Raises:
         Exception if an error occurs.
     """
-    #try:
-    nrrd_name = "{}_{}_{}.nrrd".format(dataset, patient_id, image_format)
-    nrrd_file_path = os.path.join(output_dir, nrrd_name)
+
+    nrrd_file_path = output_dir + '/' + patient_id + '.nrrd'
     sitk_object = run_core(dicom_dir, image_format)
     if save:
         nrrdWriter = sitk.ImageFileWriter()
         nrrdWriter.SetFileName(nrrd_file_path)
         nrrdWriter.SetUseCompression(True)
         nrrdWriter.Execute(sitk_object)
-    print ("dataset:{} patient_id:{} done!".format(dataset, patient_id))
     return sitk_object
-    #except Exception as e:
-    #    print ("dataset:{} patient_id:{} error:{}".format(dataset, patient_id, e))
 
 
+def main():
 
-if __name__ == '__main__':
-
-    input_dir = '/mnt/aertslab/USERS/Christian/For_Ben'
-    output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/dfci_data_test'
+    #input_dir = '/mnt/aertslab/USERS/Christian/For_Ben'
+    input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
+    #input_dir = '/mnt/kannlab_rfa/Ben/HN_Dicom_Export'
+    output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_img2'
+    data1_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
+    # get img ids for the curated dataset
+    img_ids = []
+    for img_dir in glob.glob(data1_dir + '/*nrrd'):
+        img_id = img_dir.split('/')[-1].split('.')[0]
+        img_ids.append(img_id)
+    # curate data for the new dataset
     pat_ids = []
+    count = 0
     for folder in os.listdir(input_dir):
-        print(folder)
         pat_id = str(folder)
+        if pat_id not in img_ids:
+            count += 1
+            print(count, pat_id)
+            dicom_dir = os.path.join(input_dir, folder)
+            try:
+                dcm_to_nrrd(
+                    patient_id=pat_id,
+                    dicom_dir=dicom_dir,
+                    output_dir=output_dir,
+                    image_format='ct',
+                    save=True)
+            except Exception as e:
+                print(pat_id, e)
+                pat_ids.append(pat_id)
+    print('problematic dcm data:', pat_ids)
+
+
+def main2():
+
+    input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/HN_Dicom_Export'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/raw_img'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # curate data for the new dataset
+    pat_ids = []
+    count = 0
+    for root, dirs, files in os.walk(input_dir):
+        if not dirs:
+            if root.split('_')[-1] == 'HN':
+                img_dir = root
+                pat_id = img_dir.split('/')[-2].split('_')[0]
+                count += 1
+                print(count, pat_id)
+                try:
+                    dcm_to_nrrd(
+                        patient_id=pat_id,
+                        dicom_dir=img_dir,
+                        output_dir=output_dir,
+                        image_format='ct',
+                        save=True)
+                except Exception as e:
+                    print(pat_id, e)
+                    pat_ids.append(pat_id)
+    print('problematic dcm data:', pat_ids)
+
+
+def main3():
+
+    #input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
+    input_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/raw_img'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # curate data for the new dataset
+    pat_ids = []
+    count = 0
+    for folder in os.listdir(input_dir):
+        pat_id = str(folder)
+        count += 1
+        print(count, pat_id)
         dicom_dir = os.path.join(input_dir, folder)
         try:
             dcm_to_nrrd(
-                dataset='dfci',
                 patient_id=pat_id,
                 dicom_dir=dicom_dir,
                 output_dir=output_dir,
@@ -173,9 +237,9 @@ if __name__ == '__main__':
     print('problematic dcm data:', pat_ids)
 
 
+if __name__ == '__main__':
 
-
-
+    main3()
 
 
 

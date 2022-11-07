@@ -3,7 +3,7 @@ import os
 import glob
 
 
-def rtstruct_to_nrrd(dataset, patient_id, path_to_rtstruct, path_to_image, output_dir, prefix = ""):
+def rtstruct_to_nrrd(patient_id, path_to_rtstruct, path_to_image, output_dir):
     
     """
     Converts a single rtstruct file into a folder containing individual structure
@@ -24,23 +24,26 @@ def rtstruct_to_nrrd(dataset, patient_id, path_to_rtstruct, path_to_image, outpu
         Exception if an error occurs.
     """
 
-    if prefix == "":
-        output_folder = os.path.join(output_dir, "{}_{}".format(dataset, patient_id))
-    else:
-        output_folder = os.path.join(output_dir, "{}_{}_{}".format(dataset, patient_id, prefix))
-    cmd = ["plastimatch", "convert", "--input", path_to_rtstruct, "--output-prefix",
-           output_folder, "--prefix-format", "nrrd", "--fixed", path_to_image]
+    output_folder = output_dir + '/' + patient_id
+    cmd = ['plastimatch', 'convert', '--input', path_to_rtstruct, '--output-prefix',
+           output_folder, '--prefix-format', 'nrrd', '--fixed', path_to_image]
     try:
         subprocess.call(cmd)
     except Exception as e:
-        print ("dataset:{} patient_id:{} error:{}".format(dataset, patient_id, e))
+        print ('patient_id:{} error:{}'.format(dataset, patient_id, e))
 
 
-if __name__ == '__main__':
+def main():
 
-    input_dir = '/mnt/aertslab/USERS/Ben/HN_OUTCOMES/For_Ben'
-    output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/dfci_seg_test'
-    data_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/dfci_data_test'
+    #input_dir = '/mnt/kannlab_rfa/Ben/HN_Dicom_Export'
+    #output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_segmentation2'
+    #data_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_img2'
+    #input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
+    #output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH3/uncombined_seg'
+    #data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH3/raw_img'
+    input_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/uncombined_seg'
+    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -56,19 +59,65 @@ if __name__ == '__main__':
                 rtstruct_dir = dcm
                 for ct_dir in sorted(glob.glob(data_dir + '/*nrrd')):
                     print(ct_dir)
-                    ID = ct_dir.split('/')[-1].split('_')[1]
+                    ID = ct_dir.split('/')[-1].split('.')[0]
                     print(ID)
                     if ID == pat_id:
                         count += 1
                         print(count, pat_id)
                         img_dir = ct_dir
                         rtstruct_to_nrrd(
-                            dataset='dfci', 
                             patient_id=pat_id, 
                             path_to_rtstruct=rtstruct_dir, 
                             path_to_image=img_dir, 
                             output_dir=output_dir, 
-                            prefix="")
+                            )
+
+def main2():
+
+    input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/HN_Dicom_Export'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/uncombined_seg'
+    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/raw_img'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    pat_ids = []
+    bad_data = []
+    count = 0
+    for root, dirs, files in os.walk(input_dir):
+        if not dirs:
+            if root.split('_')[-1] == 'HN':
+                dcm_dir = root
+                pat_id = dcm_dir.split('/')[-2].split('_')[0]
+                count += 1
+                print(count, pat_id)
+                for dcm in glob.glob(dcm_dir + '/*dcm'):
+                    dcm_type = dcm.split('/')[-1].split('.')[0]
+                    if dcm_type == 'RTSTRUCT':
+                        #print(dcm)
+                        rtstruct_dir = dcm
+                        for ct_dir in sorted(glob.glob(data_dir + '/*nrrd')):
+                            print(ct_dir)
+                            ID = ct_dir.split('/')[-1].split('.')[0]
+                            print(ID)
+                            if ID == pat_id:
+                                count += 1
+                                print(count, pat_id)
+                                img_dir = ct_dir
+                                try:
+                                    rtstruct_to_nrrd(
+                                        patient_id=pat_id, 
+                                        path_to_rtstruct=rtstruct_dir, 
+                                        path_to_image=img_dir, 
+                                        output_dir=output_dir)
+                                except Exception as e:
+                                    print(e, pat_id)
+                                    bad_data.append(pat_id)
+    print(bad_data)
+
+
+if __name__ == '__main__':
+
+    main()
 
 
 
