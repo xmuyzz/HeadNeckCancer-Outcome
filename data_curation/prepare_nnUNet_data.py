@@ -48,14 +48,14 @@ def prepare_nnUNet_data(proj_dir, data_dir, data_type):
     if data_type == 'train':
         img_crop_dir = proj_dir + '/data/TOT/crop_img_160'
         seg_crop_dir = proj_dir + '/data/TOT/crop_seg_p_n_160'
-    elif data_type == 'test2':
+    elif data_type == 'test4':
         img_crop_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/crop_img'
         seg_crop_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/crop_seg_p_n'
     elif data_type == 'test5':
         img_crop_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH/crop_img'
-        seg_crop_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH/crop_seg_pn'
-    img_crop_dirs = [i for i in sorted(glob.glob(img_crop_dir + '/*nii.gz'))]
-    seg_crop_dirs = [i for i in sorted(glob.glob(seg_crop_dir + '/*nii.gz'))]
+        seg_crop_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH/crop_seg_p_n_160'
+    img_crop_dirs = [i for i in sorted(glob.glob(img_crop_dir + '/*nrrd'))]
+    seg_crop_dirs = [i for i in sorted(glob.glob(seg_crop_dir + '/*nrrd'))]
     img_dirs = []
     seg_dirs = []
     img_ids = []
@@ -193,7 +193,7 @@ def prepare_nnUNet_data(proj_dir, data_dir, data_type):
 if __name__ == '__main__':
 
     task = 'Task502_tot_p_n'
-    data_type = 'train'
+    data_type = 'test5'
     project = 'kannlab'
     if project == 'kannlab':
         proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck'
