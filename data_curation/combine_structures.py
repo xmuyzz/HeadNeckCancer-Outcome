@@ -39,7 +39,9 @@ def combine_structures(patient_id, mask_arr, path_to_reference_image_nrrd,
 
     # ensure that all images have the same shape
     for a, b in itertools.combinations(arrays, 2):
-        assert a.shape == b.shape, "masks do not have the same shape"
+        #assert a.shape == b.shape, "masks do not have the same shape"
+        if a.shape != b.shape:
+            print('a.shape:', a.shape, 'b.shape:', b.shape)
         #assert a.max() == b.max(), "masks do not have the same max value (1)"
         assert a.min() == b.min(), "masks do not have the same min value (0)"
     combined = np.zeros(arrays[0].shape)

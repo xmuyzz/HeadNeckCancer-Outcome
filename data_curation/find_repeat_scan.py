@@ -66,20 +66,25 @@ def seg_dicom(proj_dir):
 
 
 def test(proj_dir):
-    case = '10047042048'
-    img1 = 'CT.1.2.840.113619.2.55.3.3752517765.117.1202764551.849.1.dcm'
-    img2 = 'CT.1.2.840.113619.2.55.3.3752517765.117.1202764552.1.153.dcm' 
-    seg1 = 'RTSTRUCT.1.2.246.352.71.4.1039211570.2306282.20080222181706.dcm'
-    seg2 = 'RTSTRUCT.1.2.246.352.71.4.1039211570.2321412.20080303162609.dcm'
-    img1_dir = proj_dir + '/' + case + '/' + img1
-    img2_dir = proj_dir + '/' + case + '/' + img2
-    seg1_dir = proj_dir + '/' + case + '/' + seg1
-    seg2_dir = proj_dir + '/' + case + '/' + seg2
-    paths = [img1_dir, img2_dir, seg1_dir, seg2_dir]
-    names = ['img1', 'img2', 'seg1', 'seg2']
+    case1 = '10021247043/1277753958_HN_HN'
+    case2 = '10021247043/1399322408_HN_HN'
+    img1 = 'CT.1.2.840.113619.2.55.3.380389780.84.1277753958.119.1.dcm'
+    seg1 = 'RTSTRUCT.1.2.246.352.71.4.953043541824.74893.20140512122419.dcm'
+    img2 = 'CT.1.2.840.113619.2.55.3.380389780.649.1399322408.449.1.dcm' 
+    seg2 = 'RTSTRUCT.1.2.246.352.71.4.953043541824.346096.20140515151340.dcm'
+    img1_dir = proj_dir + '/' + case1 + '/' + img1
+    seg1_dir = proj_dir + '/' + case1 + '/' + seg1
+    img2_dir = proj_dir + '/' + case2 + '/' + img2
+    seg2_dir = proj_dir + '/' + case2 + '/' + seg2
+    paths = [img1_dir, seg1_dir, img2_dir, seg2_dir]
+    names = ['img1', 'seg1', 'img2', 'seg2']
+    ds = dicom.read_file(img1_dir)
+    #print(ds[0x0020, 0x0052])
+    print(ds)
     for path, name in zip(paths, names):
         ds = dicom.read_file(path)
         print(name, ds.StudyDate)
+        #print(name, ds)
 
 
 def test_seg(proj_dir):
@@ -152,14 +157,44 @@ def get_scan_type(proj_dir):
     print(bad_data)
 
 
+def get_new_data(proj_dir):
+
+    save_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/data/OPC2'
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    bad_data = []
+    count = 0
+    rename = False
+    if rename:
+        for root, paths, files in os.walk(proj_dir):
+            if not paths:
+                count += 1
+                pat_id = root.split('/')[-2]
+                scan_id = root.split('/')[-1]
+                new_id = pat_id + '_' + scan_id
+                print(count, new_id)
+                new_path = os.path.dirname(root) + '/' + new_id
+                print(new_path)
+                #os.rename(root, new_path)
+                #save_path = save_dir + '/' + new_id
+                #shutil.copytree(new_path, save_path)
+    for root, paths, files in os.walk(proj_dir):
+        if not paths:
+            count += 1
+            scan_id = root.split('/')[-1]
+            print(count, scan_id)
+            save_path = save_dir + '/' + scan_id
+            shutil.move(root, save_path)
+
+
 if __name__ == '__main__':
 
-    #proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/HN_Dicom_Export'
+    proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/data/HN_Dicom_Export'
     #proj_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
-    proj_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
-    test(proj_dir)
+    #proj_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
+    #get_new_data(proj_dir)
     #move_seg_to_folder(proj_dir)
-    #test_seg(proj_dir)
+    test(proj_dir)
     #get_scan_type(proj_dir)
 
 

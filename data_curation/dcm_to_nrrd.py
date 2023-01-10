@@ -147,6 +147,7 @@ def main():
     input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
     #input_dir = '/mnt/kannlab_rfa/Ben/HN_Dicom_Export'
     output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_img2'
+    output_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_img2'
     data1_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/DFCI/new_curation/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -180,19 +181,18 @@ def main():
 
 def main2():
 
-    input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/HN_Dicom_Export'
-    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/raw_img'
+    input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2/dcm'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-
-    # curate data for the new dataset
     pat_ids = []
     count = 0
     for root, dirs, files in os.walk(input_dir):
         if not dirs:
-            if root.split('_')[-1] == 'HN':
+            names = root.split('/')[-1].split('_')
+            if names[-1] == 'HN':
                 img_dir = root
-                pat_id = img_dir.split('/')[-2].split('_')[0]
+                pat_id = names[0] + '_' + names[1]
                 count += 1
                 print(count, pat_id)
                 try:
@@ -210,9 +210,10 @@ def main2():
 
 def main3():
 
-    #input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
-    input_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
-    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/raw_img'
+    input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC3/raw_img'
+    #input_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
+    #output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -223,7 +224,7 @@ def main3():
         pat_id = str(folder)
         count += 1
         print(count, pat_id)
-        dicom_dir = os.path.join(input_dir, folder)
+        dicom_dir = input_dir + '/' + folder
         try:
             dcm_to_nrrd(
                 patient_id=pat_id,

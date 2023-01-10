@@ -4,11 +4,9 @@ import glob
 
 
 def rtstruct_to_nrrd(patient_id, path_to_rtstruct, path_to_image, output_dir):
-    
     """
     Converts a single rtstruct file into a folder containing individual structure
-    nrrd files. The folder will be named dataset_patient id.
-    
+    nrrd files. The folder will be named dataset_patient id.    
     Args:
         dataset (str): Name of dataset.
         patient_id (str): Unique patient id.
@@ -23,7 +21,6 @@ def rtstruct_to_nrrd(patient_id, path_to_rtstruct, path_to_image, output_dir):
     Raises:
         Exception if an error occurs.
     """
-
     output_folder = output_dir + '/' + patient_id
     cmd = ['plastimatch', 'convert', '--input', path_to_rtstruct, '--output-prefix',
            output_folder, '--prefix-format', 'nrrd', '--fixed', path_to_image]
@@ -41,9 +38,12 @@ def main():
     #input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
     #output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH3/uncombined_seg'
     #data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH3/raw_img'
-    input_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
-    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/uncombined_seg'
-    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/raw_img'
+    #input_dir = '/mnt/kannlab_rfa/Ben/HN_NonOPC_Dicom_Export'
+    #output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/uncombined_seg'
+    #data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/NonOPC/raw_img'
+    input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC3/raw_gtv'
+    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC3/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -69,14 +69,20 @@ def main():
                             patient_id=pat_id, 
                             path_to_rtstruct=rtstruct_dir, 
                             path_to_image=img_dir, 
-                            output_dir=output_dir, 
-                            )
+                            output_dir=output_dir)
 
 def main2():
 
-    input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/HN_Dicom_Export'
-    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/uncombined_seg'
-    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/raw_img'
+    #input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/HN_Dicom_Export'
+    #output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/uncombined_seg'
+    #data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH2/raw_img'
+    input_dir = '/mnt/kannlab_rfa/Ben/NewerHNScans/OPX'
+    output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC3/raw_gtv'    
+    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC3/raw_img'
+
+    #input_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2/dcm'
+    #output_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2/gtv_seg'
+    #data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2/raw_img'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
@@ -85,9 +91,10 @@ def main2():
     count = 0
     for root, dirs, files in os.walk(input_dir):
         if not dirs:
-            if root.split('_')[-1] == 'HN':
+            names = root.split('/')[-1].split('_')
+            if names[-1] == 'HN':
                 dcm_dir = root
-                pat_id = dcm_dir.split('/')[-2].split('_')[0]
+                pat_id = names[0] + '_' + names[1]
                 count += 1
                 print(count, pat_id)
                 for dcm in glob.glob(dcm_dir + '/*dcm'):

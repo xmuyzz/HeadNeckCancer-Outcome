@@ -181,6 +181,7 @@ def crop_top_image_only(patient_id, img_dir, crop_shape, return_type, output_dir
         image_arr = np.interp(image_arr, [-200, 200], [0, 1])
     elif norm_type == 'np_clip':
         image_arr = np.clip(image_arr, a_min=-200, a_max=200)
+        image_arr = np.clip(image_arr, a_min=-175, a_max=275)
         MAX, MIN = image_arr.max(), image_arr.min()
         image_arr = (image_arr - MIN) / (MAX - MIN)
 

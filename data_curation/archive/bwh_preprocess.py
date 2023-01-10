@@ -31,108 +31,59 @@ def change_img_name(proj_dir):
             os.rename(old_path, new_path) 
 
 
-def remove_folder():
-    bwh_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH'
-    opc2_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2'
-    ID = []
-    # get OPC2 ID
-    for img_dir in glob.glob(opc2_dir + '/raw_img/*nrrd'):
-        ID = img_dir.split('_')[0]
-        IDs.append(ID)
-    # remove raw img file
-    count = 0
-    for i, img_dir in glob.glob(bwh_dir + '/raw_img/*nrrd'):
-        ID = img_dir.split('.')[0]
-        if ID in IDs:
-            count += 1
-            print(count, ID)
-            os.remove(img_dir)
-    # remove raw gtv folders
-    count = 0
-    for folder in os.listdir(bwh_dir + '/raw_gtv'):
-        if folder in IDs:
-            count += 1
-            print(count, folder)
-            os.rmdir(bwh_dir + '/' + folder)
-
-def combine_csv():
-    data_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2/out_file'
-    df_dice = pd.read_csv(data_dir + '/dice_sum_4.csv')
-    df_meta = pd.read_csv(data_dir + '/bwh_meta.csv', encoding='unicode_escape', low_memory=False)
-    df_meta['PMRN'] = df_meta['PMRN'].astype(float)
-    ids = []
-    for img_id in df_dice['img_id']:
-        pat_id = img_id.split('_')[0]
-        ids.append(pat_id)
-    df_dice['PMRN'] = ids
-    df_dice['PMRN'] = df_dice['PMRN'].astype(float)
-    df = df_dice.merge(df_meta, how='left', on='PMRN')
-    df.to_csv(data_dir + '/summary.csv', index=False)
-    df1 = df[['PMRN', 'nn_id', 'pn', 'dice_pn', 'p', 'dice_p', 'n', 'dice_n', 'Treating MD', 'Radiation Therapy Start Date', 'Histology', 'Post-RT Surgery']]
-    df1.to_csv(data_dir + '/sum_clean.csv', index=False)
-    list1 = df_dice['PMRN'].to_list()
-    list2 = df_meta['PMRN'].to_list()
-    print(list1[0:10])
-    print(list2[0:10])
-    if any(i in list1 for i in list2):
-        print('overlap')
-    else:
-        print('no overlap')
-
-
-
 def get_seg_info(proj_dir):
     """
     COMBINING MASKS 
     """
-    #proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2'
-    bwh_img_dir = proj_dir + '/raw_img'
-    bwh_seg_dir = proj_dir + '/raw_gtv'
-    output_dir = proj_dir + '/out_file' 
+    dfci_img_dir = proj_dir + '/raw_img'
+    dfci_seg_dir = proj_dir + '/uncombined_seg'
+    output_dir = proj_dir + '/output_data' 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    _pat_list = ['vGTV', 'pre', 'Pre', 'xGTV', '60', '66', '64']
-    _pn_list = ['cm', 'mm', '+', '**', 'z', 'Z', 'none', 'resident', 'dfrm', 'Dfmd', 'dfmd','Dfrmd', 
-                'CTV', 'Expansion', 'virtual', 'Virtual', 'LX', 'TEMP', 'expand', 'larynx']
-    _N_list = ['TONSIL', 'Prim', 'NPX', 'OPX', 'FINAL', 'Tonsil', 'New', 'Dfrmd', 'TNSL']
+    _pn_list = ['cm', 'mm', '+', '**', 'z', 'none', 'resident', 'pre', 'dfrm', 'Dfmd', 'dfmd','Dfrmd', 
+                'CTV', 'Pre', 'Expansion', 'virtual', 'Virtual', 'LX', 'TEMP', 'expand', 'larynx', 'vGTV']
+    _N_list = ['TONSIL', 'Prim', 'NPX', 'OPX', 'FINAL', 'Pre', 'Tonsil', 'New', 'Dfrmd', 'TNSL']
     _n_list = ['tonsil', 'TONSIL', 'expand', 'noFDG', 'resident', 'Central', 'central', 'Joint', 'PT', 
-               'nodose', 'Tnsil', 'Tonsil', 'yinitialGTVp', 'larynx', 'Combined', 'p', 'new']
+               'nodose', 'Tnsil', 'Tonsil', 'yinitialGTVp', 'Pre', 'larynx', 'Combined', 'p', 'new']
     n_list = ['L 2', 'R 3', 'L_lvl', 'R_lvl', 'parotid', 'L2', 'parap', 'LII', 'RII', 'R_2']
     p_list = ['BOT', 'P', 'p', 'pn', 'Tonsil', 'Primary', 'TONSIL', 'prim', 'primary', 'RTONSIL', 'PRIMARY', 
-              'tonsil', 'Prim', 'phar', 'OPX', 'HPX', 'palate', 'larynx', 'Central', 'central', 'TNSL', 
-              'tumor', '_p_70_n'] 
+              'tonsil', 'Prim', 'phar', 'OPX', 'HPX', 'palate', 'larynx', 'Central', 'central', 'TNSL', 'tumor', '_p_70_n'] 
     _p_list = ['NK', 'LN', 'parotid', 'parap', 'neck', 'Neck', 'RP', 'Node', 'RII', 'LII', 'R_2', 'GTVn']
     seg_IDsss = []
-    for tumor_type in ['pn', 'p', 'n']:
+    for tumor_type in ['pn', 'n', 'p']:
         if tumor_type == 'pn':
             pat_IDs = []
             seg_IDss = []    
-            for img_dir in sorted(glob.glob(bwh_img_dir + '/*nrrd')):
+            for img_dir in sorted(glob.glob(dfci_img_dir + '/*nrrd')):
                 seg_dirs = []
                 seg_IDs = []
                 pat_id = img_dir.split('/')[-1].split('.')[0]
                 #print(pat_id)
-                for seg_dir in glob.glob(bwh_seg_dir + '/' + pat_id + '/*nrrd'):
-                    seg_name = seg_dir.split('/')[-1].split('.')[0]
-                    if 'GTV' in seg_name and not any(x in seg_name for x in _pn_list):
-                        seg_dirs.append(seg_dir)
-                        seg_IDs.append(seg_name)
-                print(pat_id, seg_IDs)
+                for folder in os.listdir(dfci_seg_dir):
+                    ID = folder.split('.')[0]
+                    if ID == pat_id:
+                        #print(ID)
+                        for seg_dir in glob.glob(os.path.join(dfci_seg_dir, folder) + '/*nrrd'):
+                            seg_name = seg_dir.split('/')[-1].split('.')[0]
+                            if 'GTV' in seg_name and not any(x in seg_name for x in _pn_list):
+                                seg_dirs.append(seg_dir)
+                                seg_IDs.append(seg_name)
+                        print(pat_id, seg_IDs)
                 pat_IDs.append(pat_id)
                 seg_IDss.append(seg_IDs)
         elif tumor_type == 'n':
             pat_IDs = []
             seg_IDss = []
-            for img_dir in sorted(glob.glob(bwh_img_dir + '/*nrrd')):
+            for img_dir in sorted(glob.glob(dfci_img_dir + '/*nrrd')):
                 seg_dirs = []
                 seg_IDs = []
                 pat_id = img_dir.split('/')[-1].split('.')[0]
                 #print(pat_id)
-                for folder in os.listdir(bwh_seg_dir):
+                for folder in os.listdir(dfci_seg_dir):
                     ID = folder.split('.')[0]
                     if ID == pat_id:
                         #print(ID)
-                        for seg_dir in glob.glob(bwh_seg_dir + '/' + folder + '/*nrrd'):
+                        for seg_dir in glob.glob(os.path.join(dfci_seg_dir, folder) + '/*nrrd'):
                             seg_name = seg_dir.split('/')[-1].split('.')[0]
                             if 'GTV' in seg_name and not any(x in seg_name for x in _pn_list):
                                 if 'N' in seg_name and not any(x in seg_name for x in _N_list):
@@ -150,16 +101,16 @@ def get_seg_info(proj_dir):
         elif tumor_type == 'p':
             pat_IDs = []
             seg_IDss = []
-            for img_dir in sorted(glob.glob(bwh_img_dir + '/*nrrd')):
+            for img_dir in sorted(glob.glob(dfci_img_dir + '/*nrrd')):
                 seg_dirs = []
                 seg_IDs = []
                 pat_id = img_dir.split('/')[-1].split('.')[0]
                 #print(pat_id)
-                for folder in os.listdir(bwh_seg_dir):
+                for folder in os.listdir(dfci_seg_dir):
                     ID = folder.split('.')[0]
                     if ID == pat_id:
                         #print(ID)
-                        for seg_dir in glob.glob(bwh_seg_dir + '/' + folder + '/*nrrd'):
+                        for seg_dir in glob.glob(os.path.join(dfci_seg_dir, folder) + '/*nrrd'):
                             seg_name = seg_dir.split('/')[-1].split('.')[0]
                             if 'GTV' in seg_name and not any(x in seg_name for x in _pn_list):
                                 if any(x in seg_name for x in p_list) and not any(x in seg_name for x in _p_list):
@@ -170,68 +121,16 @@ def get_seg_info(proj_dir):
                 seg_IDss.append(seg_IDs)
         seg_IDsss.append(seg_IDss)
     df = pd.DataFrame({'pat id': pat_IDs, 'pn': seg_IDsss[0], 'n': seg_IDsss[1], 'p': seg_IDsss[2]})
-    IDs = []
-    count = 0
-    for ID, pns in zip(df['pat id'], df['pn']):
-        for x in _pat_list:
-            if any(x in pn for pn in pns):
-                count += 1
-                print(count, ID)
-                IDs.append(ID)
-    print('total case:', df.shape[0])
-    df0 = df[~df['pat id'].isin(IDs)]
-    df0.columns = ['ID', 'pn', 'n', 'p']
-    IDs = []
-    for ID in df0['ID']:
-        if ID.split('_'):
-            ID = ID.split('_')[0]
-        else:
-            ID = ID
-        IDs.append(ID)
-    df0['PMRN'] = IDs
-    df0['PMRN'] = df0['PMRN'].astype(float)
-    print('total case:', df.shape[0])
-    print(df0)
     fn = output_dir + '/GTV_seg.csv'
-    df0.to_csv(fn, index=True)
+    df.to_csv(fn, index=True)
 
 
-def get_seg_df(proj_dir):
-    #df0 = pd.read_csv(proj_dir + '/clinical_data/GTV_seg.csv', converters={tumor_type: pd.eval})
-    #df = pd.read_csv(proj_dir + '/clinical_data/bwh_meta.csv', converters={tumor_type: pd.eval}, encoding= 'unicode_escape')
-    df0 = pd.read_csv(proj_dir + '/out_file/GTV_seg.csv', index_col=0)
-    df = pd.read_csv(proj_dir + '/clinical_data/bwh_meta.csv', encoding= 'unicode_escape')
-    df = df[['PMRN', 'Pre-RT Neck Dissection', 'Pre-RT Primary Resection', 'Pre-RT Surgery',
-        'Radiation adjuvant to surgery', 'Induction Chemotherapy', 'HISTOLOGY']]
-    #print(df)
-    df = df.loc[df['HISTOLOGY'] == 'Squamous Cell Carcinoma']
-    #print(df)
-    df = df[~df['Pre-RT Neck Dissection'].isin(['Yes'])]
-    #print(df)
-    df = df[~df['Pre-RT Primary Resection'].isin(['Yes'])]
-    #print(df)
-    df = df[~df['Pre-RT Surgery'].isin(['Yes'])]
-    #print(df)
-    df = df[~df['Radiation adjuvant to surgery'].isin(['Yes'])]
-    df = df[~df['Induction Chemotherapy'].isin(['Yes'])]
-    df['HISTOLOGY'] = df['HISTOLOGY'].astype(str)
-    print(df)
-    print(df0)
-    df1 = df0.merge(df, on='PMRN', how='left').reset_index(drop=True)
-    #df = df[['PMRN', 'pn', 'p', 'n', 'Pre-RT Neck Dissection', 'Pre-RT Primary Resection', 'Pre-RT Surgery',
-    #    'Radiation adjuvant to surgery', 'Induction Chemotherapy', 'HISTOLOGY']]
-    print(df1)
-    fn = proj_dir + '/clinical_data/seg.csv'
-    df1.to_csv(fn, index=False)
-
-
-def combine_mask(proj_dir, tumor_type):
+def combine_mask2(proj_dir, tumor_type):
     """
     COMBINING MASKS 
     """
-    #proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/OPC2'
     raw_img_dir = proj_dir + '/raw_img'
-    raw_gtv_dir = proj_dir + '/raw_gtv'
+    uncombined_seg_dir = proj_dir + '/uncombined_seg'
     seg_n_save_dir = proj_dir + '/raw_seg_n'
     seg_p_save_dir = proj_dir + '/raw_seg_p'
     seg_pn_save_dir = proj_dir + '/raw_seg_pn'
@@ -248,6 +147,7 @@ def combine_mask(proj_dir, tumor_type):
     if tumor_type == 'pn':
         seg_save_dir = seg_pn_save_dir
     
+    df = pd.read_csv(proj_dir + '/output_data/GTV_seg.csv', converters={tumor_type: pd.eval})
     img_ids = []
     seg_namess = []
     bad_data = []
@@ -258,7 +158,7 @@ def combine_mask(proj_dir, tumor_type):
         #img_id = img_dir.split('/')[-1].split('_')[1]
         img_id = img_dir.split('/')[-1].split('.')[0]
         #print(img_id)
-        for seg_folder in os.listdir(raw_gtv_dir):
+        for seg_folder in os.listdir(uncombined_seg_dir):
             #print(seg_folder)
             #seg_id = seg_folder.split('_')[1]
             seg_id = str(seg_folder)
@@ -272,7 +172,7 @@ def combine_mask(proj_dir, tumor_type):
                         print(gtv_list)
                         if gtv_list:
                             for gtv in gtv_list:
-                                gtv_dir = raw_gtv_dir + '/' + seg_folder + '/' + gtv + '.nrrd'
+                                gtv_dir = uncombined_seg_dir + '/' + seg_folder + '/' + gtv + '.nrrd'
                                 #print(gtv_dir)
                                 seg_dirs.append(gtv_dir)
                         else:
@@ -290,6 +190,105 @@ def combine_mask(proj_dir, tumor_type):
                     print(seg_id, e)
                     bad_data.append(seg_id)
     print('bad data:', bad_data)
+
+
+def combine_mask(proj_dir, tumor_type):
+    """
+    COMBINING MASKS 
+    """
+    raw_img_dir = proj_dir + '/raw_img'
+    uncombined_seg_dir = proj_dir + '/uncombined_seg'
+    seg_n_save_dir = proj_dir + '/raw_seg_n'
+    seg_p_save_dir = proj_dir + '/raw_seg_p'
+    seg_pn_save_dir = proj_dir + '/raw_seg_pn'
+    if not os.path.exists(seg_n_save_dir):
+        os.makedirs(seg_n_save_dir)
+    if not os.path.exists(seg_p_save_dir):
+        os.makedirs(seg_p_save_dir)
+    if not os.path.exists(seg_pn_save_dir):
+        os.makedirs(seg_pn_save_dir)
+    if tumor_type == 'n':
+        seg_save_dir = seg_n_save_dir
+        csv_save_dir = proj_dir + '/combined_seg_n.csv'
+    if tumor_type == 'p':
+        seg_save_dir = seg_p_save_dir
+        csv_save_dir = proj_dir + '/combined_seg_p.csv'
+    if tumor_type == 'pn':
+        seg_save_dir = seg_pn_save_dir
+        csv_save_dir = proj_dir + '/combined_seg_pn.csv'
+    img_ids = []
+    seg_namess = []
+    count = 0
+    for img_dir in sorted(glob.glob(raw_img_dir + '/*nrrd')):
+        seg_names = []
+        seg_dirs = []
+        #img_id = img_dir.split('/')[-1].split('_')[1]
+        img_id = img_dir.split('/')[-1].split('.')[0]
+        #print(img_id)
+        for seg_folder in os.listdir(uncombined_seg_dir):
+            #print(seg_folder)
+            #seg_id = seg_folder.split('_')[1]
+            seg_id = str(seg_folder)
+            #print(seg_id)
+            if seg_id == img_id:
+                count += 1
+                print(count, 'ID:', seg_id)
+                for seg_dir in glob.glob(uncombined_seg_dir + '/' + seg_folder + '/*nrrd'):
+                    seg_name = seg_dir.split('/')[-1].split('.')[0]
+                    #print(seg_dir)
+                    #print(seg_name)
+                    if tumor_type == 'pn':
+                        if 'GTV' in seg_name and 'cm' not in seg_name and 'mm' not in seg_name \
+                            and '+' not in seg_name and '**' not in seg_name and 'z' not in seg_name \
+                            and 'resident' not in seg_name and 'pre' not in seg_name and 'Dfmd' not in seg_name:
+                            seg_dirs.append(seg_dir)
+                            seg_names.append(seg_name)
+                    #print('seg names:', seg_names)
+                    #print(seg_dir)
+                    elif tumor_type == 'n':
+                        if 'GTV' in seg_name and 'cm' not in seg_name and 'mm' not in seg_name \
+                            and '+' not in seg_name and '**' not in seg_name and 'z' not in seg_name \
+                            and 'resident' not in seg_name and 'pre' not in seg_name and 'Dfmd' not in seg_name:
+                            if 'N' in seg_name and 'TONSIL' not in seg_name and 'Prim' not in seg_name \
+                                and 'NPX' not in seg_name and 'Neck' not in seg_name and 'FINAL' not in seg_name:
+                                seg_dirs.append(seg_dir)
+                                seg_names.append(seg_name)
+                            elif 'n' in seg_name and 'tonsil' not in seg_name and 'Tonsil' not in seg_name \
+                                and 'expand' not in seg_name and 'noFDG' not in seg_name and 'resident' \
+                                not in seg_name and 'neck' not in seg_name:
+                                seg_dirs.append(seg_dir)
+                                seg_names.append(seg_name)
+                    elif tumor_type == 'p':
+                        if 'GTV' in seg_name and 'cm' not in seg_name and 'mm' not in seg_name \
+                            and '+' not in seg_name and '**' not in seg_name and 'z' not in seg_name \
+                            and 'resident' not in seg_name and 'pre' not in seg_name and 'Dfmd' not in seg_name:
+                            if 'BOT' in seg_name or 'P' in seg_name or 'Tonsil' in seg_name \
+                                or 'Primary' in seg_name or 'TONSIL' in seg_name or 'prim' in seg_name \
+                                or 'primary' in seg_name or 'RTONSIL' in seg_name or 'PRIMARY' in seg_name \
+                                or 'tonsil' in seg_name or 'Prim' in seg_name or 'phar' in seg_name \
+                                or 'OPX' in seg_name or 'HPX' in seg_name or 'palate' in seg_name \
+                                or 'phar' in seg_name:
+                                seg_dirs.append(seg_dir)
+                                seg_names.append(seg_name)
+
+                try:
+                    combined_mask = combine_structures(
+                        patient_id=seg_id, 
+                        mask_arr=seg_dirs, 
+                        path_to_reference_image_nrrd=img_dir, 
+                        binary=2, 
+                        return_type='sitk_object', 
+                        output_dir=seg_save_dir)
+                    print('combine successfully')
+                except Exception as e:
+                    print(seg_id, e)
+                    if seg_names == []:
+                        print('no GTV!')
+        img_ids.append(img_id)
+        seg_namess.append(seg_names)
+    # save mask information
+    df = pd.DataFrame({'pat id': img_ids, 'seg id': seg_namess})
+    df.to_csv(csv_save_dir, index=False)            
 
 
 def get_pn_seg(proj_dir):
@@ -344,9 +343,6 @@ def get_pn_seg(proj_dir):
             p_n_seg = np.asarray(p_n_seg, dtype='uint8')
             # some voxels from P and N have overlap
             p_n_seg[p_n_seg == 3] = 1
-            # clear overlap with airway by setting threshold -800 HU
-            img_seg = arr * p_n_seg
-            p_n_seg[img_seg <= -500] = 0
             sitk_obj = sitk.GetImageFromArray(p_n_seg)
             sitk_obj.SetSpacing(img.GetSpacing())
             sitk_obj.SetOrigin(img.GetOrigin())
@@ -486,42 +482,109 @@ def interp_reg_crop(proj_dir, root_dir, tumor_type, image_format, crop_shape):
                     except Exception as e:
                         bad_ids.append(img_id)
                         print(img_id, e)
-    print('bad ids:', bad_ids)
-    print('incomplete scans:', bad_scans)
+        print('bad ids:', bad_ids)
+        print('incomplete scans:', bad_scans)
+
+
+def crop(proj_dir, tumor_type, crop_shape, image_format):    
+    """
+With TOP-CROP HPC ### NEED TO RUN FOR image_crop, image_crop_p, and image_crop_n  
+    WILL ONLY WORK WITH SPACING = 1,1,3
+    """
+    print('------start cropping--------')
+    img_reg_dir = proj_dir + '/reg_img2'
+    seg_p_n_reg_dir = proj_dir + '/reg_seg_p_n2'
+    seg_pn_reg_dir = proj_dir + '/reg_seg_pn2'
+    seg_p_reg_dir = proj_dir + '/reg_seg_p2'
+    seg_n_reg_dir = proj_dir + '/reg_seg_n2'
+    img_crop_dir = proj_dir + '/crop_img'
+    seg_p_n_crop_dir = proj_dir + '/crop_seg_p_n2'
+    seg_pn_crop_dir = proj_dir + '/crop_seg_pn2'
+    seg_p_crop_dir = proj_dir + '/crop_seg_p2'
+    seg_n_crop_dir = proj_dir + '/crop_seg_n2'
+    if not os.path.exists(img_crop_dir):
+        os.makedirs(img_crop_dir)
+    if not os.path.exists(seg_p_n_crop_dir):
+        os.makedirs(seg_p_n_crop_dir)
+    if not os.path.exists(seg_pn_crop_dir):
+        os.makedirs(seg_pn_crop_dir)
+    if not os.path.exists(seg_p_crop_dir):
+        os.makedirs(seg_p_crop_dir)
+    if not os.path.exists(seg_n_crop_dir):
+        os.makedirs(seg_n_crop_dir)
+    img_reg_dirs = [i for i in sorted(glob.glob(img_reg_dir + '/*nrrd'))]
+    seg_p_n_reg_dirs = [i for i in sorted(glob.glob(seg_p_n_reg_dir + '/*nrrd'))]
+    seg_pn_reg_dirs = [i for i in sorted(glob.glob(seg_pn_reg_dir + '/*nrrd'))]
+    seg_p_reg_dirs = [i for i in sorted(glob.glob(seg_p_reg_dir + '/*nrrd'))]
+    seg_n_reg_dirs = [i for i in sorted(glob.glob(seg_n_reg_dir + '/*nrrd'))]
+    if tumor_type == 'p_n':
+        seg_dirs = seg_p_n_reg_dirs
+        seg_crop_dir = seg_p_n_crop_dir
+    elif tumor_type == 'pn':
+        seg_dirs = seg_pn_reg_dirs
+        seg_crop_dir = seg_pn_crop_dir
+    elif tumor_type == 'p':
+        seg_dirs = seg_p_reg_dirs
+        seg_crop_dir = seg_p_crop_dir
+    elif tumor_type == 'n':
+        seg_dirs = seg_n_reg_dirs
+        seg_crop_dir = seg_n_crop_dir
+    # registration for image and seg
+    img_ids = []
+    count = 0
+    for img_dir in img_reg_dirs:
+        img_id = img_dir.split('/')[-1].split('.')[0]
+        for seg_dir in seg_dirs:
+            seg_id = seg_dir.split('/')[-1].split('.')[0]
+            if img_id == seg_id:
+                count += 1
+                print(count, img_id)
+                img_ids.append(img_id)
+                try:
+                    crop_top(
+                        patient_id=img_id,
+                        img_dir=img_dir,
+                        seg_dir=seg_dir,
+                        crop_shape=crop_shape,
+                        return_type='sitk_object',
+                        output_img_dir=img_crop_dir,
+                        output_seg_dir=seg_crop_dir,
+                        image_format=image_format)
+                except Exception as e:
+                    print(e, 'crop failed!')
 
 
 def main():
 
     root_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME'
     #proj_dir = root_dir + '/DFCI/new_curation'
-    #proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH'
-    proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH_TOT'
+    proj_dir = '/mnt/kannlab_rfa/Zezhong/HeadNeck/Data/BWH'
     tumor_type = 'p_n'
     image_format = 'nrrd'
     crop_shape = (160, 160, 64)
     #crop_shape = (172, 172, 76)
-    step = 'get_seg_df'
+    #step = 'combine_mask'
 
     #for step in ['combine_mask', 'get_pn_seg', 'interp_reg_crop']:
-    if step == 'change_name':
-        change_img_name(proj_dir)
-    elif step == 'get_seg_info':
-        get_seg_info(proj_dir)
-    elif step == 'get_seg_df':
-        get_seg_df(proj_dir)
-    elif step == 'combine_mask':
-        for tumor_type in ['p', 'n', 'pn']:
-            combine_mask(proj_dir, tumor_type)
-    elif step == 'get_pn_seg':
-        get_pn_seg(proj_dir)
-    elif step == 'prepro':
-        interp_reg_crop(proj_dir, root_dir, tumor_type, image_format, crop_shape)
+    for step in ['get_seg_info']:
+        if step == 'change_name':
+            change_img_name(proj_dir)
+        elif step == 'get_seg_info':
+            get_seg_info(proj_dir)
+        elif step == 'combine_mask':
+            for tumor_type in ['p']:
+                combine_mask2(proj_dir, tumor_type)
+        elif step == 'get_pn_seg':
+            get_pn_seg(proj_dir)
+        elif step == 'interp_reg_crop':
+            interp_reg_crop(proj_dir, root_dir, tumor_type, image_format, crop_shape)
+        elif step == 'crop':
+            crop(proj_dir, tumor_type, crop_shape, image_format)
 
 
 if __name__ == '__main__':
     
     main()
-    #combine_mask()
 
 
 
