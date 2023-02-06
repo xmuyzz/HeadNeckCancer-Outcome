@@ -199,30 +199,22 @@ def get_seg_info(proj_dir):
 def get_seg_df(proj_dir):
     #df0 = pd.read_csv(proj_dir + '/clinical_data/GTV_seg.csv', converters={tumor_type: pd.eval})
     #df = pd.read_csv(proj_dir + '/clinical_data/bwh_meta.csv', converters={tumor_type: pd.eval}, encoding= 'unicode_escape')
-    df0 = pd.read_csv(proj_dir + '/out_file/GTV_seg.csv', index_col=0)
-    df = pd.read_csv(proj_dir + '/clinical_data/bwh_meta.csv', encoding= 'unicode_escape')
+    df0 = pd.read_csv(proj_dir + '/clinical_data/GTV_seg.csv', index_col=0)
+    df = pd.read_csv(proj_dir + '/clinical_data/bwh_meta.csv', encoding='unicode_escape')
     df = df[['PMRN', 'Pre-RT Neck Dissection', 'Pre-RT Primary Resection', 'Pre-RT Surgery',
         'Radiation adjuvant to surgery', 'Induction Chemotherapy', 'HISTOLOGY']]
-    #print(df)
-    df = df.loc[df['HISTOLOGY'] == 'Squamous Cell Carcinoma']
-    #print(df)
-    df = df[~df['Pre-RT Neck Dissection'].isin(['Yes'])]
-    #print(df)
-    df = df[~df['Pre-RT Primary Resection'].isin(['Yes'])]
-    #print(df)
-    df = df[~df['Pre-RT Surgery'].isin(['Yes'])]
-    #print(df)
-    df = df[~df['Radiation adjuvant to surgery'].isin(['Yes'])]
-    df = df[~df['Induction Chemotherapy'].isin(['Yes'])]
-    df['HISTOLOGY'] = df['HISTOLOGY'].astype(str)
-    print(df)
-    print(df0)
+    df = df.loc[df['HISTOLOGY']=='Squamous Cell Carcinoma']
+    df = df.loc[df['Pre-RT Neck Dissection']!='Yes']
+    df = df.loc[df['Pre-RT Primary Resection']!='Yes']
+    df = df.loc[df['Pre-RT Surgery']!='Yes']
+    df = df.loc[df['Radiation adjuvant to surgery']!='Yes']
+    #df = df.loc[df['Induction Chemotherapy']!='Yes']
     df1 = df0.merge(df, on='PMRN', how='left').reset_index(drop=True)
-    #df = df[['PMRN', 'pn', 'p', 'n', 'Pre-RT Neck Dissection', 'Pre-RT Primary Resection', 'Pre-RT Surgery',
-    #    'Radiation adjuvant to surgery', 'Induction Chemotherapy', 'HISTOLOGY']]
-    print(df1)
-    fn = proj_dir + '/clinical_data/seg.csv'
-    df1.to_csv(fn, index=False)
+    df1 = df1.loc[df1['pn']!='[]']
+    df1 = df1[df1['HISTOLOGY'].notna()]
+    print(df1.shape[0])
+    fn = proj_dir + '/clinical_data/seg_df.csv'
+    #df1.to_csv(fn, index=False)
 
 
 def combine_mask(proj_dir, tumor_type):

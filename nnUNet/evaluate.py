@@ -211,13 +211,15 @@ def get_aggregated_dice2(pred_label_dir, gt_label_dir):
 if __name__ == "__main__":
     
     #data_dir = '/mnt/aertslab/USERS/Zezhong/hecktor2022/DATA2'
-    data_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet'
+    #data_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet'
     #gt_label_dir = data_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task504_primary_CT/labelsTs'
     #pred_label_dir = data_dir + '/all_results/primary_CT'
     #gt_label_dir = data_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task501_Hecktor/labelsTs'
     #pred_label_dir = data_dir + '/results_test'
-    gt_label_dir = data_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task501_PN/labelsTs'
-    pred_label_dir = data_dir + '/results_dfci'
+    #gt_label_dir = data_dir + '/nnUNet_raw_data_base/nnUNet_raw_data/Task501_PN/labelsTs'
+    #pred_label_dir = data_dir + '/results_dfci'
+
+    proj_dir = '/mnt/aertslab/USERS/Zezhong/HN_OUTCOME/nnUNet'
 
     #get_scores(pred_label_dir, gt_label_dir)
     #get_scores_onelabel(pred_label_dir, gt_label_dir)
