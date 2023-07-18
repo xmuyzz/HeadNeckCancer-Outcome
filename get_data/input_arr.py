@@ -15,12 +15,10 @@ def input_arr(data_dir, proj_dir, new_spacing, norm_type, tumor_type, input_img_
 
     """
     save np arr for masked img for CT scans
-    
     args:
         tumor_type {'string'} - tumor + node or tumor
         data_dir {'path'} - tumor+node label dir CHUM cohort
         arr_dir {path} - tumor+node label dir CHUS cohort
-
     return:
         images with preprocessing;        
     """

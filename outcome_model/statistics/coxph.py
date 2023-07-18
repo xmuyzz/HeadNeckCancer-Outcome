@@ -12,7 +12,6 @@ from sklearn.cluster import KMeans
 from lifelines import CoxPHFitter
 
 
-
 def coxph(proj_dir, coxph_model, hpv, surv_fn, score_type):
 
     output_dir = os.path.join(proj_dir, 'output')
@@ -88,13 +87,7 @@ if __name__ == '__main__':
     hpv = 'pos'
     coxph_model = 'clinical'
 
-    coxph(
-        proj_dir, 
-        coxph_model, 
-        hpv, 
-        surv_fn, 
-        score_type
-        )
+    coxph(proj_dir, coxph_model, hpv, surv_fn, score_type)
 
 
 

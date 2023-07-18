@@ -4,14 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
-
-def surv_plot_mul(proj_dir, n_curves, surv_fn, choose_patient=True,
-                  plot_median=False):
-
+def surv_plot_mul(proj_dir, n_curves, surv_fn, choose_patient=True, plot_median=False):
     """plot survival curves
     """
-
     output_dir = os.path.join(proj_dir, 'output')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     if not os.path.exists(output_dir): os.mkdir(output_dir)
@@ -30,23 +25,11 @@ def surv_plot_mul(proj_dir, n_curves, surv_fn, choose_patient=True,
     else: 
         pat_list = range(n_curves)
     for i in pat_list:
-        plt.plot(
-            duration_index, 
-            surv.iloc[:, i], 
-            linewidth=2,
-            label=str(i)
-            )
+        plt.plot(duration_index, surv.iloc[:, i], linewidth=2, label=str(i))
     # plot median survival curve
     if plot_median:
         surv_median = surv.median(axis=1)
-        plt.plot(
-            duration_index, 
-            surv_median, 
-            color='black',
-            linestyle='dashed',
-            linewidth=2, 
-            label='median', 
-            ) 
+        plt.plot(duration_index, surv_median, color='black', linestyle='dashed', linewidth=2, label='median')
     fig.suptitle('overall survival', fontweight='bold', fontsize=13)
     plt.ylabel('Survial Probability', fontweight='bold', fontsize=12)
     plt.xlabel('Time (days)', fontweight='bold', fontsize=12)
@@ -74,9 +57,4 @@ if __name__ == '__main__':
     surv_fn = 'resnet101_20_0.0001_surv.csv'
     n_curves = 5
     
-
-    surv_plot_mul(
-        proj_dir, 
-        n_curves, 
-        surv_fn
-        )
+    surv_plot_mul(proj_dir, n_curves, surv_fn)

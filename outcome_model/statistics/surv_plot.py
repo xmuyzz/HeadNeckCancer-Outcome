@@ -25,11 +25,9 @@ from pycox.utils import kaplan_meier
 
 
 def surv_plot(proj_dir, x, y, fn):
-
     """
     plot survival curves
     """
-
     output_dir = os.path.join(out_dir, 'output')
     if not os.path.exists(output_dir): os.mkdir(output_dir)
 

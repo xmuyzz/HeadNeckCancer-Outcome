@@ -19,7 +19,6 @@ def img_label_df(proj_dir, tumor_type, input_img_type, save_img_type):
     Raise errors:
         None
     """
-
     pn_masked_img_dir = proj_dir + '/data/pn_masked_img'
     pn_raw_img_dir = proj_dir + '/data/pn_raw_img'
     p_masked_img_dir = proj_dir + '/data/p_masked_img'

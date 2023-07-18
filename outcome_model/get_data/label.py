@@ -7,7 +7,6 @@ import SimpleITK as sitk
 
 
 def label(proj_dir, clinical_data_file, save_label):
-    
     """
     Create dataframe to store labels;
     Args:
@@ -19,7 +18,6 @@ def label(proj_dir, clinical_data_file, save_label):
     Raise errors:
         None
     """
-
     clinical_data_dir = os.path.join(proj_dir, 'data')
     pro_data_dir = os.path.join(proj_dir, 'pro_data')
     output_dir = os.path.join(proj_dir, 'output')

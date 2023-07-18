@@ -7,8 +7,6 @@ from bbox import get_bbox_3D
 
 
 def max_bbox(data_dir, tumor_type):
-
-
     """
     get the max lenths of w, h, d of bbox
     
@@ -19,7 +17,6 @@ def max_bbox(data_dir, tumor_type):
     Returns:
         lenths of width, height and depth of max bbox.
     """
-    
     # primary and node
     CHUM_seg_pn_dir = os.path.join(data_dir, 'CHUM_files/label_reg')
     CHUS_seg_pn_dir = os.path.join(data_dir, 'CHUS_files/label_reg')

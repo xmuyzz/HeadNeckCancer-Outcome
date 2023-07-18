@@ -3,64 +3,54 @@ import pandas as pd
 import numpy as np
 import torch
 import random
-from data_loader_transform import data_loader_transform
+from dl_train import dl_train
+from dl_test import dl_test
 from train import train
 from test import test
 from get_cnn_model import get_cnn_model
 from get_cox_model import get_cox_model
 from opts import parse_opts
-from get_data.data_loader2 import data_loader2
+import torch.cuda
+import time
+import warnings
 
+def warn(*args, **kwargs):
+    pass
 
 
 def main(opt):
+
+    warnings.warn = warn
+
+    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+    torch.cuda.is_available()
+    print(torch.__version__)
 
     random.seed(opt.manual_seed)
     np.random.seed(opt.manual_seed)
     torch.manual_seed(opt.manual_seed)
 
     if opt.proj_dir is not None:
-        opt.output_dir = os.path.join(opt.proj_dir, opt.output)
-        opt.pro_data_dir = os.path.join(opt.proj_dir, opt.pro_data)
-        opt.log_dir = os.path.join(opt.proj_dir, opt.log)
-        opt.model_dir = os.path.join(opt.proj_dir, opt.model)
-        opt.train_dir = os.path.join(opt.proj_dir, opt.train_folder)
-        opt.val_dir = os.path.join(opt.proj_dir, opt.val_folder)
-        opt.test_dir = os.path.join(opt.proj_dir, opt.test_folder)
-        if not os.path.exists(opt.output_dir):
-            os.makedirs(opt.output_dir)
-        if not os.path.exists(opt.pro_data_dir):
-            os.makefirs(opt.pro_data_dir)
-        if not os.path.exists(opt.log_dir):
-            os.makedirs(opt.log_dir)
-        if not os.path.exists(opt.model_dir):
-            os.makedirs(opt.model_dir)
-        if not os.path.exists(opt.train_dir):
-            os.makedirs(opt.train_dir)
-        if not os.path.exists(opt.val_dir):
-            os.makedirs(opt.val_dir)
-        if not os.path.exists(opt.test_dir):
-            os.makedirs(opt.test_dir)
-
-    if opt.augmentation:
-        dl_train, dl_tune, dl_val, dl_test, dl_tune_cb, df_tune, \
-        dl_baseline = data_loader_transform(
-            pro_data_dir=opt.pro_data_dir, 
-            batch_size=opt.batch_size, 
-            _cox_model=opt._cox_model, 
-            num_durations=opt.num_durations,
-            _outcome_model=opt._outcome_model,
-            tumor_type=opt.tumor_type,
-            input_data_type=opt.input_data_type,
-            i_kfold=opt.i_kfold)
-    else:
-        dl_train, dl_tune, dl_val = data_loader2(
-            pro_data_dir=opt.pro_data_dir,
-            batch_size=opt.batch_size,
-            _cox_model=opt.cox_model_name,
-            num_durations=opt.num_durations)
+        task_dir = opt.proj_dir + '/task/' + opt.task + '_' + opt.surv_type + '_' + opt.img_type + '_' + \
+            opt.tumor_type + '_' + opt.cox + '_' + opt.cnn_name + str(opt.model_depth) 
+        model_dir = task_dir + '/models'
+        metric_dir = task_dir + '/metrics'
+        if not os.path.exists(task_dir):
+            os.makedirs(task_dir)
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+        if not os.path.exists(metric_dir):
+            os.makedirs(metric_dir)
    
-    if opt.train:
+    if opt.load_data:
+        # train data loader
+        dl_tr, dl_va, dl_cb, dl_bl, df_va = dl_train(proj_dir=opt.proj_dir, metric_dir=metric_dir, batch_size=opt.batch_size, 
+            cox=opt.cox, num_durations=opt.num_durations, surv_type=opt.surv_type, img_type=opt.img_type, 
+            tumor_type=opt.tumor_type, rot_prob=opt.rot_prob, gau_prob=opt.gau_prob, flip_prob=opt.flip_prob, 
+            in_channels=opt.in_channels)
+
+    if opt.load_model:
         """
         CNN Models
         Implemented:
@@ -69,74 +59,48 @@ def main(opt):
         Temperarily not working:
             SqueezeNet, ResNeXt, ResNeXtV2, C3D,  
         """
+        #cnns = ['ResNetV2']
+        #model_depths = [10, 18, 34, 50, 152, 200]
+        if opt.cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
+            assert opt.model_depth in [10, 18, 34, 50, 101, 152, 200]
+        elif opt.cnn_name in ['ResNeXt', 'ResNeXtV2', 'WideResNet']:
+            assert opt.model_depth in [50, 101, 152, 200]
+        elif opt.cnn_name in ['DenseNet']:
+            assert opt.model_depth in [121, 169, 201]
+        elif opt.cnn_name in ['MobileNet', 'MobileNetV2', 'ShuffleNet', 'ShuffleNetV2', 'EfficientNet']:
+            model_depth = ''
+        if opt.cox == 'CoxPH':
+            n_classes = 1
+            print('n_classes:', n_classes)
+        else:
+            n_classes = opt.num_durations
 
-        cnns = ['ResNetV2']
-        model_depths = [10, 18, 34, 50, 152, 200]
-        for cnn_name in cnns:   
-            for model_depth in model_depths:
-                if cnn_name in ['resnet', 'ResNetV2', 'PreActResNet']:
-                    assert model_depth in [10, 18, 34, 50, 152, 200]
-                elif cnn_name in ['ResNeXt', 'ResNeXtV2', 'WideResNet']:
-                    assert model_depth in [50, 101, 152, 200]
-                elif cnn_name in ['DenseNet']:
-                    assert model_depth in [121, 169, 201]
-                elif cnn_name in ['MobileNet', 'MobileNetV2', 'ShuffleNet', 
-                                   'ShuffleNetV2', 'EfficientNet']:
-                    model_depth = 0
-                if opt._cox_model == 'CoxPH':
-                    n_classes = 1
-                    print('n_classes:', n_classes)
-                else:
-                    n_classes = opt.num_durations
-                cnn_model = get_cnn_model(
-                    cnn_name=cnn_name,
-                    model_depth=model_depth,
-                    n_classes=n_classes, 
-                    in_channels=opt.in_channels)
-                cox_model = get_cox_model(
-                    pro_data_dir=opt.pro_data_dir,
-                    cnn_model=cnn_model,
-                    _cox_model=opt._cox_model,
-                    lr=opt.lr)
-                for epoch in [2]:
-                    for lr in [0.0001]:
-                        train(
-                            output_dir=opt.output_dir,
-                            pro_data_dir=opt.pro_data_dir,
-                            log_dir=opt.log_dir,
-                            model_dir=opt.model_dir,
-                            cnn_model=cnn_model,
-                            model_depth=model_depth,
-                            cox_model=cox_model,
-                            epochs=epoch,
-                            dl_train=dl_train,
-                            dl_tune=dl_tune,
-                            dl_val=dl_val,
-                            dl_tune_cb=dl_tune_cb,
-                            df_tune=df_tune,
-                            dl_baseline=dl_baseline,
-                            cnn_name=cnn_name,
-                            _cox_model=opt._cox_model,
-                            lr=lr,
-                            target_c_index=0.75,
-                            eval_model='best_model')
+        cnn_model = get_cnn_model(cnn_name=opt.cnn_name, model_depth=opt.model_depth, n_classes=n_classes, 
+                                  in_channels=opt.in_channels)
+        cox_model = get_cox_model(task_dir=task_dir, cnn_model=cnn_model, cox=opt.cox, lr=opt.lr)
+
+    if opt.train:
+        # train model
+        train(task_dir=task_dir, surv_type=opt.surv_type, img_type=opt.img_type, cnn_name=opt.cnn_name, 
+              model_depth=opt.model_depth, cox=opt.cox, cnn_model=cnn_model, cox_model=cox_model, epoch=opt.epoch, 
+              batch_size=opt.batch_size, lr=opt.lr, dl_tr=dl_tr, dl_va=dl_va, dl_cb=dl_cb, dl_bl=dl_bl, df_va=df_va, 
+              target_c_index=opt.target_c_index, target_loss=opt.target_loss)
+    
     if opt.test:
-        test(
-            run_type=run_typ,
-            model_dir=model_dir,
-            log_dir=log_dir,
-            pro_data_dir=opt.pro_data_dir, 
-            cox_model=cox_model, 
-            dl_val=dl_val, 
-            dl_test=dl_test,
-            cnn_name=cnn_name, 
-            model_depth=model_depth)
-
+        if opt.cox == 'CoxPH':
+            n_classes = 1
+            print('n_classes:', n_classes)
+        else:
+            n_classes = opt.num_durations
+        # test data loader
+        df, dl = dl_test(proj_dir=opt.proj_dir, surv_type=opt.surv_type, batch_size=opt.batch_size, cox=opt.cox, 
+                         num_durations=opt.num_durations, data_set=opt.data_set, img_type=opt.img_type, tumor_type=opt.tumor_type,
+                         in_channels=opt.in_channels)
+        # test model
+        test(surv_type=opt.surv_type, data_set=opt.data_set, task_dir=task_dir, eval_model=opt.eval_model, cox_model=cox_model, 
+             df=df, dl=dl)
 
 if __name__ == '__main__':
 
     opt = parse_opts()
-
     main(opt)
-
-

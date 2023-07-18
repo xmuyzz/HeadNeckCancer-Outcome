@@ -13,12 +13,12 @@ from statistics.surv_plot import surv_plot
 from statistics.surv_plot_mul import surv_plot_mul
 from statistics.roc import roc
 from statistics.kmf_risk_strat import kmf_risk_strat
+from get_cnn_model import get_cnn_model
+from get_cox_model import get_cox_model
+from logger import test_logger
 
 
-
-def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
-         cnn_name, model_depth):
-
+def test(surv_type, data_set, task_dir, eval_model, cox_model, df, dl):
     """
     Model evaluation
     Args:
@@ -27,46 +27,47 @@ def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
         C-index {float} -- Time dependent concordance index.
         Surv {pd.df} -- survival prediction.
     """
-
     # load model
-    fn = str(cnn_name) + str(model_depth) + '_c_indexs.npy'
-    c_indexs = np.load(os.path.join(log_dir, fn))
-    print(c_indexs)
-    if eval_model == 'best_model':
-        c_index = np.amax(c_indexs)
-        fn = cnn_name + str(model_depth) + '_' + str(c_index) + '_final_model.pt'
+    if eval_model == 'best_loss_model':
+        fn = 'weights_best_loss.pt'
+    elif eval_model == 'best_cindex_model':
+        fn = 'weights_best_cindex.pt'
+    elif eval_model == 'target_cindex_model':
+        fn = 'weights_target_cindex.pt'
     elif eval_model == 'final_model':
-        c_index = c_indexs[-1]
-        fn = cnn_name + str(model_depth) + '_' + str(c_index) + '_model.pt'
-    cox_model.load_net(os.path.join(model_dir, fn))
-    
-    if run_type == 'val':
-        dl = dl_val
-        df_csv = 'df_pn_masked_val0.csv'
-    elif run_type == 'test':
-        dl = dl_test
-        df_csv = 'df_pn_masked_test.csv'
+        fn = 'weights_final.pt'
+    cox_model.load_model_weights(task_dir + '/models/' + fn)
+    print('successfully loaded model!')
+
+    save_dir = task_dir + '/' + data_set
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
     # surv prediction
     surv = cox_model.predict_surv_df(dl)
-    fn_surv = run_type + cnn_name + str(model_depth) + str(c_index) + 'surv.csv'
-    surv.to_csv(os.path.join(pro_data_dir, fn_surv), index=False)
+    surv.to_csv(save_dir + '/surv.csv', index=False)
+    # individual Hazard Ratio
+    HR = cox_model.predict_hazard(dl)
+    mean_HR = round(np.mean(HR), 3)
+    median_HR = round(np.median(HR), 3)
+    print('Mean HR:', mean_HR)
+    print('Median HR:', median_HR)
 
     # c-index
-    df = pd.read_csv(os.path.join(pro_data_dir, df_csv))
-    durations = df['death_time'].to_numpy()
-    events = df['death_event'].to_numpy()
-    ev = EvalSurv(
-        surv=surv,
-        durations=durations,
-        events=events,
-        censor_surv='km')
+    surv_type = 'rfs'
+    df = df.dropna(subset=[surv_type + '_event', surv_type + '_time'])
+    durations = df[surv_type + '_time'].to_numpy()
+    events = df[surv_type + '_event'].to_numpy()
+    #df = df.dropna(subset=['rfs_event', 'rfs_time'])
+    #durations = df['rfs_time'].to_numpy()
+    #events = df['rfs_event'].to_numpy()
+    ev = EvalSurv(surv=surv, durations=durations, events=events, censor_surv='km')
     c_index = round(ev.concordance_td(), 3)
+    print('data set:', data_set)
     print('c-index:', c_index)
 
     # Brier score
-    """plot IPCW Brier score for a given set of times. 
-    """
+    # plot IPCW Brier score for a given set of times.
     time_grid = np.linspace(durations.min(), durations.max(), 100)
     _ = ev.brier_score(time_grid).plot()
     #time_grid = np.linspace(0, sim_test[0].max())
@@ -75,7 +76,8 @@ def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
     In practice this is done by numerical integration over a defined time_grid.
     """
     brier_score = ev.integrated_brier_score(time_grid)
-    print('brier_score:', round(brier_score, 3))
+    brier_score = round(brier_score, 3)
+    print('brier_score:', brier_score)
 
     # Negative binomial log-likelihood
     ev.nbll(time_grid).plot()
@@ -83,7 +85,11 @@ def test(run_type, model_dir, log_dir, pro_data_dir, cox_model, dl_val, dl_test,
     _ = plt.xlabel('Time')
     # Integrated scores
     nbll_score = ev.integrated_nbll(time_grid)
-    print('nbll_score:', round(nbll_score, 3))
+    nbll_score = round(nbll_score, 3)
+    print('nbll_score:', nbll_score)
+
+    # test logger
+    test_logger(save_dir, c_index, mean_HR, median_HR, brier_score, nbll_score, eval_model)
 
 
 

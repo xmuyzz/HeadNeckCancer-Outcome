@@ -1,70 +1,53 @@
 import argparse
 
-
 def parse_opts():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--manual_seed', default=1234, type=int, help='Mannual seed')    
-    # path
-    parser.add_argument('--proj_dir', default='/mnt/aertslab/USERS/Zezhong/HN_OUTCOME', type=str, help='Root path')
-    parser.add_argument('--data_dir', default='/mnt/aertslab/DATA/HeadNeck/HN_PETSEG/curated', type=str, help='data path')
-    parser.add_argument('--prepro_data', default='prepro_data', type=str, help='Preprocessed image path')
-    parser.add_argument('--label', default='label', type=str, help='Label path')
-    parser.add_argument('--output', default='output', type=str, help='Results output path')
-    parser.add_argument('--pro_data', default='pro_data', type=str, help='Processed data path')
-    parser.add_argument('--model', default='model', type=str, help='Results output path')
-    parser.add_argument('--log', default='log', type=str, help='Log data path')
-    parser.add_argument('--train_folder', default='train', type=str, help='Train results path')
-    parser.add_argument('--val_folder', default='val', type=str, help='Validation results path')
-    parser.add_argument('--test_folder', default='test', type=str, help='Test results path')
-    
+    parser.add_argument('--proj_dir', default='/mnt/kannlab_rfa/Zezhong/HeadNeck/outcome', type=str, help='project path')
+
     # data preprocessing
     parser.add_argument('--clinical_data_file', default='HN_clinical_meta_data.csv', type=str, help='label')
     parser.add_argument('--save_label', default='label.csv', type=str, help='save label')
-    parser.add_argument('--_outcome_model', default='overall_survival', type=str, 
-                        help='outcome model (overall_survival|local_control|distant_control')
-    parser.add_argument('--new_spacing', default=(2, 2, 2), type=float, help='new spacing size')
-    parser.add_argument('--data_exclude', default=None, type=str, help='Exclude data')
-    parser.add_argument('--crop_shape', default=[192, 192, 100], type=float, help='Crop image shape')
-    parser.add_argument('--run_type', default=None, type=str, help='Used run type (train|val|test|tune)')
     parser.add_argument('--input_channel', default=1, type=int, help='Input channel (1|3)')
-    parser.add_argument('--norm_type', default='np_clip', type=str, help='image normalization (np_clip|np_linear')
-    parser.add_argument('--slice_range', default=range(17, 83), type=int, help='Axial slice range')
-    parser.add_argument('--interp', default='linear', type=str, help='Interpolation for respacing')
-    parser.add_argument('--tumor_type', default='primary_node', type=str, help='(primary_node|primary|node')
-    parser.add_argument('--save_img_type', default='nii', type=str, help='(nii|npy')
-
-    # train model
-    parser.add_argument('--input_data_type', default='masked_img', type=str, help='(masked_img|raw_img')
-    parser.add_argument('--i_kfold', default=0, type=int, help='(0|1|2|3|4)')
-    parser.add_argument('--cnn_name', default='resnet101', type=str, help='resnet (18|34|50|152|200)')
-    parser.add_argument('--_cox_model', default='CoxPH', type=str, help='cox model')
-    parser.add_argument('--batch_size', default=8, type=int, help='Batch size')
+    
+    # model 
+    parser.add_argument('--cnn_name', default='DenseNet', type=str, help='resnet (18|34|50|152|200)')
+    parser.add_argument('--model_depth', default=121, type=str, help='resnet (18|34|50|152|200)')
+    parser.add_argument('--cox', default='LogisticHazard', type=str, help='CoxPH | PCHazard | DeepHit | LogisticHazard')
+    parser.add_argument('--batch_size', default=8, type=int, help='batch size')
     parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
-    parser.add_argument('--epoch', default=3, type=int, help='Epoch')
+    parser.add_argument('--epoch', default=100, type=int, help='Epoch')
     parser.add_argument('--in_channels', default=1, type=int, help='Input channels')
-    parser.add_argument('--num_durations', default=20, type=int, help='Number of durations.')
+    parser.add_argument('--num_durations', default=10, type=int, help='Number of durations')
     parser.add_argument('--activation', default='sigmoid', type=str, help='Activation function')
     parser.add_argument('--loss_function', default='binary_crossentropy', type=str, help='loss function')
     parser.add_argument('--optimizer_function', default='adam', type=str, help='optmizer function')
-    parser.add_argument('--run_model', default='EffNetB4', type=str, help='run model')
-    parser.add_argument('--input_shape', default=(192, 192, 3), type=int, help='Input shape')
+    parser.add_argument('--input_shape', default=(1, 160, 160), type=int, help='Input shape')
     parser.add_argument('--freeze_layer', default=None, type=str, help='Freeze layer to train')
 
-    # evalute model                        
-    parser.add_argument('--thr_img', default=0.5, type=float, help='threshold to decide positive class')
-    parser.add_argument('--n_bootstrap', default=1000, type=int, help='bootstrap to calcualte 95% CI of AUC')
-    parser.add_argument('--score_type', default='os_surv', type=str, help='(median|3yr_surv|5yr_surv|os_surv)')    
-    parser.add_argument('--load_model', default='model', type=str, help='(model|weights')
-    parser.add_argument('--saved_model', default='EffNetB4', type=str, help='saved model name')
+    # train
+    parser.add_argument('--rot_prob', default=0.1, type=str, help='0.1')
+    parser.add_argument('--gau_prob', default=0.5, type=str, help='0.1')
+    parser.add_argument('--flip_prob', default=0.1, type=str, help='0.1')
+    parser.add_argument('--target_c_index', default=0.7, type=str, help='0.7')
+    parser.add_argument('--target_loss', default=0.1, type=str, help='0.1')
+    parser.add_argument('--img_type', default='mask_img', type=str, help='(mask_img|bbox_img|attn_img')
+    parser.add_argument('--tumor_type', default='pn', type=str, help='(primary_node|primary|node')
+    parser.add_argument('--task', default='Task010', type=str, help='Task001')
+    parser.add_argument('--surv_type', default='os', type=str, help='rfs|os|lc|dc')
+
+    # test 
+    parser.add_argument('--data_set', default='ts_pr', type=str, help='Used run type (va|ts_gt|ts_pr|tx1_gt|tx1_pr|tx2_gt|tx2_pr)') 
+    parser.add_argument('--eval_model', default='best_cindex_model', type=str, help='best_loss_model|best_cindex_model')                     
 
     # others 
-    parser.add_argument('--augmentation', action='store_true', help='If true, augmentation is performed.')
-    parser.set_defaults(augmentation=True)
+    parser.add_argument('--load_data', action='store_true', help='If true, load data is performed.')
+    parser.set_defaults(load_data=True)
+    parser.add_argument('--load_model', action='store_true', help='If true, load model is performed.')
+    parser.set_defaults(load_model=True)
     parser.add_argument('--train', action='store_true', help='If true, training is performed.')
     parser.set_defaults(train=True)
-    parser.add_argument('val', action='store_true', help='If true, validation is performed.')
-    parser.set_defaults(val=False)
     parser.add_argument('--test', action='store_true', help='If true, test is performed.')
     parser.set_defaults(test=False)
     

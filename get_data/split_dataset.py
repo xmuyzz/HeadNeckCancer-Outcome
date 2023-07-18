@@ -7,17 +7,13 @@ from sklearn.model_selection import KFold, train_test_split
 
 
 def split_dataset(proj_dir, tumor_type, input_img_type):
-    
     """
     Split dataset into train, tuning and val with 5-fold cross-validation;
     Args:
         proj_dir {path} -- path to project folder;
-    
     Returns:
         Dataframes of train, tune and val containing data path and labels;
-    
     """
-
     # create df for data and pat_id to match labels
     if tumor_type == 'primary_node':
         if input_img_type == 'masked_img':
