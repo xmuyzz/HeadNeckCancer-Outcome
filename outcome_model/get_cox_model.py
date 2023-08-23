@@ -35,6 +35,7 @@ def get_cox_model(task_dir, cnn_model, cox, lr):
     """
     
     optimizer=torch.optim.Adam(cnn_model.parameters(), lr=lr)
+    #optimizer=torch.optim.Adam(lr=lr)
     duration_index = np.load(task_dir + '/metrics/duration_index.npy')
 
     if cox == 'PCHazard':
