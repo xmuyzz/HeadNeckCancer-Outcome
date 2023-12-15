@@ -22,12 +22,16 @@ from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ReduceLROnPl
 from logger import train_logger
 
 
-def train(task_dir, surv_type, img_type, cnn_name, model_depth, cox, cnn_model, cox_model, epoch, batch_size, lr, 
-          dl_tr, dl_va, dl_cb, dl_bl, df_va, target_c_index, target_loss):
+def train(task_dir, surv_type, img_size, img_type, cnn_name, model_depth, cox, cnn_model, cox_model, epoch, batch_size, lr, 
+          dl_tr, dl_va, dl_cb, dl_bl, df_va, target_c_index, target_loss, gauss_prob, rot_prob, flip_prob):
 
     # train logger
-    tr_log_path = train_logger(task_dir, surv_type, img_type, cnn_name, model_depth, cox, epoch, batch_size, lr, df_va)
+    #--------------
+    tr_log_path = train_logger(task_dir, surv_type, img_size, img_type, cnn_name, model_depth, cox, epoch, batch_size, lr, df_va, 
+        gauss_prob, rot_prob, flip_prob)
 
+    # callback functions
+    #--------------------------
     # callback: LR scheduler
     lambda1 = lambda epoch: 0.9 ** (epoch // 50)
     optimizer = torch.optim.Adam(cnn_model.parameters(), lr=lr, weight_decay=0.002)
@@ -35,7 +39,7 @@ def train(task_dir, surv_type, img_type, cnn_name, model_depth, cox, cnn_model, 
     if scheduler_type == 'lambda':
         scheduler = LambdaLR(optimizer, lr_lambda=[lambda1])
     elif scheduler_type == 'plateau':
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, 
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=100, 
             threshold=0.0001, threshold_mode='abs')
     lr_scheduler = LRScheduler(scheduler)
 
@@ -54,17 +58,18 @@ def train(task_dir, surv_type, img_type, cnn_name, model_depth, cox, cnn_model, 
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
         target_c_index=target_c_index,
-        target_loss=target_loss)
+        target_loss=target_loss,
+        gauss_prob=gauss_prob, rot_prob=rot_prob, flip_prob=flip_prob)
 
     # callback: early stopping with c-index
     early_stopping = tt.callbacks.EarlyStopping(
         get_score=concordance.get_last_score,
         minimize=False,
-        patience=200,
+        patience=20,
         file_path=task_dir + '/models/cpt_weights.pt')
     
     # fit model
-    print('start model training....')
+    #print('start model training....')
     my_model = cox_model
     log = my_model.fit_dataloader(
         dl_tr,

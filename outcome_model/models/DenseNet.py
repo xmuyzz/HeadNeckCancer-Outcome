@@ -153,10 +153,10 @@ class DenseNet(nn.Module):
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
-        out = F.adaptive_avg_pool3d(out,
-                                    output_size=(1, 1,
-                                                 1)).view(features.size(0), -1)
+        out = F.adaptive_avg_pool3d(out, output_size=(1, 1, 1)).view(features.size(0), -1)
+        #print('DenseNet out layer:', out.shape)
         out = self.classifier(out)
+        #print('DenseNet out layer:', out.shape)
         return out
 
 

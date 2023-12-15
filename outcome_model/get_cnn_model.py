@@ -1,11 +1,11 @@
 import torch
 from torch import nn
 from models.cnn import cnn3d
-from models import (cnn, C3DNet, resnet, ResNetV2, ResNeXt, ResNeXtV2, WideResNet, PreActResNet,
-        EfficientNet, DenseNet, ShuffleNet, ShuffleNetV2, SqueezeNet, MobileNet, MobileNetV2)
+from models import (C3DNet, resnet, ResNetV2, ResNeXt, ResNeXtV2, WideResNet, PreActResNet,
+        EfficientNet, DenseNet, Concat_DenseNet, ShuffleNet, ShuffleNetV2, SqueezeNet, MobileNet, MobileNetV2)
+from models.SwinTransformerV2 import SwinTransformerV2
 
-
-def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96):
+def get_cnn_model(cnn_name, model_depth, n_classes, n_clinical, in_channels, sample_size=96):
     """
     generate CNN models
     Args:
@@ -116,6 +116,17 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
             num_classes=n_classes,
             n_input_channels=in_channels)
 
+    elif cnn_name == 'DenseNet_Concat':
+        """
+        3D resnet
+        model_depth = [121, 169, 201]
+        """
+        model = Concat_DenseNet.CustomDenseNet(
+            model_depth=model_depth,
+            n_classes=n_classes,
+            num_clinical_features=n_clinical,
+            in_channels=in_channels)
+
     elif cnn_name == 'SqueezeNet':
         """
         SqueezeNet
@@ -175,10 +186,22 @@ def get_cnn_model(cnn_name, model_depth, n_classes, in_channels, sample_size=96)
         efficientnetb0, b1, ..., b9
         """
         model = EfficientNet.EfficientNet.from_name(
-            'efficientnet-b0', 
+            'efficientnet-b4', 
             override_params={'num_classes': n_classes}, 
             in_channels=in_channels)
     
+    elif cnn_name == 'SwinTransformerV2':
+        """
+        SwinTransformerV2
+        """
+        model = SwinTransformerV2(
+            img_size=160, patch_size=4, in_chans=1, num_classes=10,
+            embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
+            window_size=7, mlp_ratio=4., qkv_bias=True,
+            drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
+            norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
+            use_checkpoint=False, pretrained_window_sizes=[0, 0, 0, 0])
+
     if torch.cuda.is_available():
         model.cuda()
 

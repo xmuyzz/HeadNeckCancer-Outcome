@@ -1,24 +1,13 @@
-import os
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-from PIL import Image
 import torch
-import torchtuples as tt
 from torch.utils.data import DataLoader
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from torchvision import datasets, transforms
 from torch.optim import *
-#import h5py
 from pycox.datasets import metabric
-from pycox.models import CoxPH
 from pycox.evaluation import EvalSurv
-from pycox.models import PCHazard
-from pycox.models import LogisticHazard
-from pycox.models import DeepHitSingle
+from pycox.models import PCHazard, CoxPH, LogisticHazard, DeepHitSingle, MTLR
 from pycox.utils import kaplan_meier
 
 
@@ -35,6 +24,7 @@ def get_cox_model(task_dir, cnn_model, cox, lr):
     """
     
     optimizer=torch.optim.Adam(cnn_model.parameters(), lr=lr)
+    #optimizer=torch.optim.Adam(lr=lr)
     duration_index = np.load(task_dir + '/metrics/duration_index.npy')
 
     if cox == 'PCHazard':
@@ -53,6 +43,14 @@ def get_cox_model(task_dir, cnn_model, cox, lr):
         Regression and Nnet-survival.
         """
         cox_model = LogisticHazard(net=cnn_model, optimizer=optimizer, duration_index=duration_index)
+    
+    elif cox == 'MTLR':
+        """
+        The Logistic-Hazard method parametrize the discrete hazards and 
+        optimize the survival likelihood. It is also called Partial Logistic 
+        Regression and Nnet-survival.
+        """
+        cox_model = MTLR(net=cnn_model, optimizer=optimizer, duration_index=duration_index) 
 
     elif cox == 'DeepHit':
         """

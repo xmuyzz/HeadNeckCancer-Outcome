@@ -18,7 +18,7 @@ from get_cox_model import get_cox_model
 from logger import test_logger
 
 
-def test(surv_type, data_set, task_dir, eval_model, cox_model, df, dl):
+def test(surv_type, data_set, task_dir, eval_model, cox_model, df, dl, cox):
     """
     Model evaluation
     Args:
@@ -44,23 +44,43 @@ def test(surv_type, data_set, task_dir, eval_model, cox_model, df, dl):
         os.makedirs(save_dir)
 
     # surv prediction
-    surv = cox_model.predict_surv_df(dl)
-    surv.to_csv(save_dir + '/surv.csv', index=False)
-    # individual Hazard Ratio
-    HR = cox_model.predict_hazard(dl)
-    mean_HR = round(np.mean(HR), 3)
-    median_HR = round(np.median(HR), 3)
-    print('Mean HR:', mean_HR)
-    print('Median HR:', median_HR)
+
+    raw_surv = cox_model.predict_surv_df(dl)
+    raw_surv.to_csv(save_dir + '/raw_surv_1.csv', index=False)
+    print(raw_surv.shape)
+    if cox == 'PCHazard':
+        cox_model.sub = 10
+        surv = cox_model.predict_surv_df(dl)
+    elif cox in ['LogisticHazard', 'MTLR', 'PMF', 'DeepHit']:
+        surv = cox_model.interpolate(10).predict_surv_df(dl)
+    """
+    It is, therefore, often beneficial to interpolate the survival estimates. Linear interpolation (constant density interpolation) 
+    can be performed with the interpolate method. We also need to choose how many points we want to replace each grid point with. 
+    Her we will use 10."""
+    # surv = cox_model.interpolate(10).predict_surv_df(dl)
+    print(surv.shape)
+    surv.to_csv(save_dir + '/full_surv_1.csv', index=False)
+
+    # # individual Hazard Ratio
+    # HR = cox_model.predict_hazard(dl)
+    # mean_HR = round(np.mean(HR), 3)
+    # median_HR = round(np.median(HR), 3)
+    # print('Mean HR:', mean_HR)
+    # print('Median HR:', median_HR)
 
     # c-index
-    surv_type = 'rfs'
+    #surv_type = 'rfs'
     df = df.dropna(subset=[surv_type + '_event', surv_type + '_time'])
     durations = df[surv_type + '_time'].to_numpy()
     events = df[surv_type + '_event'].to_numpy()
     #df = df.dropna(subset=['rfs_event', 'rfs_time'])
     #durations = df['rfs_time'].to_numpy()
     #events = df['rfs_event'].to_numpy()
+    raw_ev = EvalSurv(surv=raw_surv, durations=durations, events=events, censor_surv='km')
+    raw_c_index = round(raw_ev.concordance_td(), 3)
+    print('data set:', data_set)
+    print('raw c-index:', raw_c_index)
+
     ev = EvalSurv(surv=surv, durations=durations, events=events, censor_surv='km')
     c_index = round(ev.concordance_td(), 3)
     print('data set:', data_set)
@@ -89,7 +109,5 @@ def test(surv_type, data_set, task_dir, eval_model, cox_model, df, dl):
     print('nbll_score:', nbll_score)
 
     # test logger
-    test_logger(save_dir, c_index, mean_HR, median_HR, brier_score, nbll_score, eval_model)
-
-
-
+    #test_logger(save_dir, c_index, mean_HR, median_HR, brier_score, nbll_score, eval_model)
+    test_logger(save_dir, c_index, brier_score, nbll_score, eval_model)

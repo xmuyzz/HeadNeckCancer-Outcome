@@ -14,7 +14,7 @@ from sklearn.preprocessing import StandardScaler
 from lifelines import CoxPHFitter
 
 
-def kmf_risk_strat(opt, score_type, hpv, n_group, surv_type, coxph_model):
+def risk_strat(opt, dataset, score_type, hpv, n_group, surv_type, cluster_model, random_state):
     """
     Kaplan-Meier analysis for risk group stratification
     Args:
@@ -27,68 +27,99 @@ def kmf_risk_strat(opt, score_type, hpv, n_group, surv_type, coxph_model):
     Raise errors:
         None;
     """
-    task_dir = opt.proj_dir + '/task/' + opt.task + '_' + opt.surv_type + '_' + opt.img_type + '_' + \
-            opt.tumor_type + '_' + opt.cox + '_' + opt.cnn_name + str(opt.model_depth) 
-    save_dir = task_dir + '/' + opt.data_set
-    data_dir = opt.proj_dir + '/data/' + opt.img_type   
-    fn = opt.data_set + '_img_label_' + opt.tumor_type + '.csv'
+
+    task_dir = opt.proj_dir + '/task/' + opt.task + '_' + opt.surv_type + '_' + opt.img_size + '_' + \
+        opt.img_type + '_' + opt.tumor_type + '_' + opt.cox + '_' + opt.cnn_name + str(opt.model_depth) 
+    save_dir = task_dir + '/' + dataset
+    data_dir = opt.data_dir + '/' + opt.img_size + '_' + opt.img_type 
+    
+    fn = dataset + '_img_label_' + opt.tumor_type + '.csv'
     df = pd.read_csv(data_dir + '/' + fn)
     times, events = surv_type + '_time', surv_type + '_event'
     df = df.dropna(subset=[times, events])
-    df = df[[times, events, 'hpv', 'stage', 'gender', 'age', 'smoke']]
-    df['hpv'] = df['hpv'].replace({'negative': 0, 'positive': 1, 'unknown': 2})
-    df['stage'] = df['stage'].replace({'I': 0, 'II': 1, 'III': 2, 'IV': 3})
-    df['gender'] = df['gender'].replace({'Male': 0, 'Female': 1})
-    #pat_id = df_val['pat_id'].to_list()
-    
-    # KMeans to cluster scores to n groups
-    #-------------------------------------
+
+    #---------------------------------------------
+    # combine DL scores with clinical info
+    #---------------------------------------------
     surv = pd.read_csv(save_dir + '/surv.csv')
-    if coxph_model == 'clinical':
-        df0 = df[['hpv', 'stage', 'gender', 'age', 'smoke']]
-    elif coxph_model == 'dl':
-        df0 = surv.T
-        df0['hpv'] = df['hpv'].to_list()
-    elif coxph_model == 'dl_clinical':
-        df0 = surv.T
-        df0['hpv'] = df['hpv'].to_list()
-        df0['smoke'] = df['smoke'].to_list()
-        df0['stage'] = df['stage'].to_list()
-        df0['gender'] = df['gender'].to_list()
-        df0['age'] = df['age'].to_list()
-    #print('coxph_model:', df0)
 
     # subgroup analysis based on HPV status
-    #--------------------------------------
     if hpv == 'hpv+':
-        df = df.loc[df['hpv'].isin([1])]
-        df0 = df0.loc[df0['hpv'].isin([1])]
+        df = df.loc[df['HPV'].isin([1])]
+        #df0 = df0.loc[df0['hpv'].isin([1])]
         print('patient n = ', df.shape[0])
     elif hpv == 'hpv-':
-        df = df.loc[df['hpv'].isin([0])]
-        df0 = df0.loc[df0['hpv'].isin([0])]
+        df = df.loc[df['HPV'].isin([0])]
+        #df0 = df0.loc[df0['hpv'].isin([0])]
         print('patient n = ', df.shape[0])
     elif hpv == 'hpv':
         # patients with known HPV status
-        df = df.loc[df['hpv'].isin([0, 1])]
-        df0 = df0.loc[df0['hpv'].isin([0, 1])]
+        df = df.loc[df['HPV'].isin([0, 1])]
+        #df0 = df0.loc[df0['hpv'].isin([0, 1])]
         print('patient n = ', df.shape[0])
     elif hpv == 'all':
         print('patient n = ', df.shape[0])
 
+    #----------------------------------------
     # K-mean clustering to find 3 risk groups      
     #----------------------------------------
-    if hpv != 'hpv' or coxph_model == 'dl':
-        #df.drop('hpv', axis=1, inplace=True)
-        df0.drop('hpv', axis=1, inplace=True)
-    x = StandardScaler().fit_transform(df0.values)
-    k_means = KMeans(n_clusters=n_group, copy_x=True, init='k-means++', n_init='auto', max_iter=100,
-        random_state=0, tol=0.0001, verbose=0)
+    print('clustering patients into 3 risk groups')
+    # choose variables 
+    if cluster_model == 'clinical':
+        df3 = df[['Female', 'Age>65', 'Smoking>10py', 'T-Stage-1234', 'N-Stage-0123']]
+    elif cluster_model == 'dl':
+        df3 = surv.T
+        #df3['HPV'] = df['HPV'].to_list()
+    elif cluster_model == 'dl_clinical':
+        df3 = surv.T
+        df3.columns = ['time1', 'time2', 'time3', 'time4', 'time5', 'time6', 'time7', 'time8', 'time9', 'time10']
+        df3 = df3.reset_index()
+        df2 = df[['Age>65', 'Female', 'T-Stage-1234', 'N-Stage-0123', 'Smoking>10py']].reset_index()
+        df3 = pd.concat([df3, df2], axis=1)
+        print('df3:', df3)
+    elif cluster_model == 'dl_clinical_muscle':
+        df3 = surv.T
+        df3.columns = ['time1', 'time2', 'time3', 'time4', 'time5', 'time6', 'time7', 'time8', 'time9', 'time10']
+        df3 = df3.reset_index()
+        df2 = df[['Age>65', 'Female', 'T-Stage-1234', 'N-Stage-0123', 'Smoking>10py', 'Muscle_Area', 'Muscle_Density']].reset_index()
+        df3 = pd.concat([df3, df2], axis=1)
+        print('df3:', df3)
+    elif cluster_model == 'dl_clinical_adipose':
+        df3 = surv.T
+        df3.columns = ['time1', 'time2', 'time3', 'time4', 'time5', 'time6', 'time7', 'time8', 'time9', 'time10']
+        df3 = df3.reset_index()
+        df2 = df[['Age>65', 'Female', 'T-Stage-1234', 'N-Stage-0123', 'Smoking>10py', 'Adipose_Area', 'Adipose_Density']].reset_index()
+        df3 = pd.concat([df3, df2], axis=1)
+        print('df3:', df3)       
+    elif cluster_model == 'dl_clinical_muscle_adipose':
+        df3 = surv.T
+        df3.columns = ['time1', 'time2', 'time3', 'time4', 'time5', 'time6', 'time7', 'time8', 'time9', 'time10']
+        df3 = df3.reset_index()
+        df2 = df[['Age>65', 'Female', 'T-Stage-1234', 'N-Stage-0123', 'Smoking>10py', 'Muscle_Area', 
+            'Muscle_Density', 'Adipose_Area', 'Adipose_Density']].reset_index()
+        df3 = pd.concat([df3, df2], axis=1)
+        print('df3:', df3)
+    # if hpv != 'hpv' or cluster_model == 'dl':
+    #     #df.drop('hpv', axis=1, inplace=True)
+    #     df3.drop('HPV', axis=1, inplace=True)
+    
+    x = StandardScaler().fit_transform(df3.values)
+    k_means = KMeans(
+        n_clusters=n_group, 
+        copy_x=True, 
+        init='k-means++', 
+        n_init='auto', 
+        max_iter=500,
+        random_state=random_state, 
+        tol=0.0001, 
+        verbose=0)
     k_means.fit(x)
     y = k_means.predict(x)
     #print(groups)
     df['group'] = y
     #print(df)
+
+    # plot clustering maps
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     plt.scatter(x[:, 0], x[:, 1], c=y, s=50, cmap='viridis')
@@ -98,25 +129,18 @@ def kmf_risk_strat(opt, score_type, hpv, n_group, surv_type, coxph_model):
     plt.close() 
     print('save clustering figure')
 
-    # CoxPH analysis
-    #----------------
-    df0[times], df0[events] = df[times].to_list(), df[events].to_list()
-    print('coxph df:')
-    print(df0)
-    cph = CoxPHFitter()
-    cph.fit(df0, duration_col=times, event_col=events)
-    cph.print_summary()
-    
-    # multivariate log-rank test
-    #---------------------------
+    #----------------------------------------------
+    # multivariate log-rank test for 3 risk groups
+    #----------------------------------------------
     results = multivariate_logrank_test(df[times], df['group'], df[events])
     #results.print_summary()
-    p_value = np.around(results.p_value, 3)
+    p_value = np.around(results.p_value, 8)
     print('log-rank test p-value:', p_value)
     #print(results.test_statistic)
-    
-    # Kaplan-Meier curve
-    #---------------------
+
+    #----------------------------------------------
+    # 5-year survival rates for 3 risk groups
+    #----------------------------------------------
     dfs = []
     for i in range(n_group):
         df3 = df.loc[df['group'] == i]
@@ -135,10 +159,12 @@ def kmf_risk_strat(opt, score_type, hpv, n_group, surv_type, coxph_model):
         os_5yr = round(1 - len(ls_event)/dfs[i].shape[0], 3)
         print('5-year survial rate:', i, os_5yr)
 
-    # Kaplan-Meier plot
+    #--------------------------------------------------------------
+    # Kaplan-Meier plots for 3 risk groups 
+    #--------------------------------------------------------------
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    labels = ['I', 'II', 'III']
+    labels = ['I', 'II', 'III', 'IV']
     #labels = ['Low risk', 'High risk', 'Intermediate risk']
     #dfs = [df0, df1, df2]
     for df, label in zip(dfs, labels):
@@ -180,16 +206,21 @@ def kmf_risk_strat(opt, score_type, hpv, n_group, surv_type, coxph_model):
     
     
 if __name__ == '__main__':
+
     opt = parse_opts()
 
+    dataset = 'ts'
+    #dataset = 'tx_bwh'
     score_type = 'mean_surv'
-    surv_type = 'rfs'
+    surv_type = 'efs'
     n_group = 3
-    coxph_model = 'dl'
+    cluster_model = 'dl_clinical_muscle_adipose'
+    random_state = 10
+    #random_state = 1234
     #for hpv in ['all', 'pos', 'neg', 'no']:
     for hpv in ['all']:    
         #for score_type in ['median_surv', 'mean_surv', '3yr_surv', '5yr_surv', 'os_surv']:
-        kmf_risk_strat(opt, score_type, hpv, n_group, surv_type, coxph_model)
+        risk_strat(opt, dataset, score_type, hpv, n_group, surv_type, cluster_model, random_state)
 
 
 

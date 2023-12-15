@@ -106,10 +106,7 @@ if __name__ == '__main__':
     tumor_type = 'primary_node'
     
     print(tumor_type)
-    max_bbox(
-        data_dir=data_dir,
-        tumor_type=tumor_type
-        )
+    max_bbox(data_dir=data_dir, tumor_type=tumor_type)
 
 
 

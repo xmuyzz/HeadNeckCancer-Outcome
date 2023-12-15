@@ -153,8 +153,8 @@ def bbox_img(img_path, seg_path, save_img_type, ID, max_bbox, output_dir):
         img_pad = np.pad(
             array=img_bbox, 
             pad_width=((pad_1s[0], pad_2s[0]), (pad_1s[1], pad_2s[1]), (pad_1s[2], pad_2s[2])), 
-                        mode='constant',
-                        constant_values=[(0, 0), (0, 0), (0, 0)])
+            mode='constant',
+            constant_values=[(0, 0), (0, 0), (0, 0)])
     #print('img_pad:', img_pad.shape)
     #output_img = sitk.GetImageFromArray(img_pad)
     

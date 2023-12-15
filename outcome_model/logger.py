@@ -7,19 +7,22 @@ from datetime import datetime
 import pytz
 
 
-def train_logger(log_dir, surv_type, img_type, cnn_name, model_depth, cox, epoch, batch_size, lr, df_va):
+
+def train_logger(task_dir, surv_type, img_size, img_type, cnn_name, model_depth, cox, epoch, batch_size, lr, df_va, 
+                 gauss_prob, rot_prob, flip_prob):
     n_va = df_va.shape[0]
     n_tr = n_va*8
     tz = pytz.timezone('US/Eastern')
     time = datetime.now(tz).strftime('%Y_%m_%d_%H_%M_%S')
-    tr_log_path = log_dir + '/training_log_' + time + '.txt'
+    tr_log_path = task_dir + '/logs/training_log_' + time + '.txt'
     with open(tr_log_path, 'w') as f:
         #f.write('\n-------------------------------------------------------------------')
         f.write('\ncreated time: %s' % datetime.now(tz).strftime('%Y-%m-%d %H:%M:%S'))
         #f.write('\n%s:' % strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
         f.write('\nmodel and training parameters:')
-        f.write('\survival type: %s' % surv_type)
-        f.write('\input img type: %s' % img_type)
+        f.write('\nsurvival type: %s' % surv_type)
+        f.write('\ninput img size: %s' % img_size)
+        f.write('\ninput img type: %s' % img_type)
         f.write('\ncnn_model: %s%s' % (cnn_name, model_depth))
         f.write('\ncox model: %s' % cox)
         f.write('\ntrain size: %s' % n_tr)
@@ -27,6 +30,9 @@ def train_logger(log_dir, surv_type, img_type, cnn_name, model_depth, cox, epoch
         f.write('\ninitial lr: %s' % lr)
         f.write('\nepoch: %s' % epoch)
         f.write('\nbatch size: %s' % batch_size)
+        f.write('\ngaussian probability: %s' % gauss_prob)
+        f.write('\nrotation probability: %s' % rot_prob)
+        f.write('\nflip probability: %s' % flip_prob)
         f.write('\n')
         f.write('\ntraining start ......')
         f.write('\n')
@@ -53,8 +59,8 @@ def callback_logger(tr_log_path, tr_loss, va_loss, lr, c_index, best_c_index, ep
     #print('successfully save train logs.')
 
 
-def test_logger(save_dir, c_index, mean_HR, median_HR, brier_score, nbll_score, eval_model): 
-        
+#def test_logger(save_dir, c_index, mean_HR, median_HR, brier_score, nbll_score, eval_model): 
+def test_logger(save_dir, c_index, brier_score, nbll_score, eval_model):       
     tz = pytz.timezone('US/Eastern')
     time = datetime.now(tz).strftime('%Y_%m_%d_%H_%M_%S')
     #log_path = save_dir + '/log_' + time + '.txt'
@@ -64,8 +70,8 @@ def test_logger(save_dir, c_index, mean_HR, median_HR, brier_score, nbll_score, 
         f.write('\ncreated time: %s' % datetime.now(tz).strftime('%Y-%m-%d %H:%M:%S'))
         f.write('\neval model: %s' % eval_model)
         f.write('\nc-index: %s' % c_index)
-        f.write('\nmean HR: %s' % mean_HR)
-        f.write('\nmedian HR: %s' % median_HR)
+        # f.write('\nmean HR: %s' % mean_HR)
+        # f.write('\nmedian HR: %s' % median_HR)
         f.write('\nbrier-score: %s' % brier_score)
         f.write('\nnbll-score: %s' % nbll_score)
         f.write('\n')
