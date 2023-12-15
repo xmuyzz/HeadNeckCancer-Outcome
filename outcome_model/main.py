@@ -3,9 +3,6 @@ import pandas as pd
 import numpy as np
 import torch
 import random
-#import onnx
-#from torchinfo import summary
-#from onnx2torch import convert
 from dl_train import dl_train
 from dl_test import dl_test
 from train import train
@@ -95,6 +92,7 @@ def main(opt):
         else:
             n_classes = opt.num_durations
 
+<<<<<<< HEAD
         cnn_model = get_cnn_model(cnn_name=opt.cnn_name, 
                                   model_depth=opt.model_depth, 
                                   n_classes=n_classes, 
@@ -108,6 +106,14 @@ def main(opt):
                                   cnn_model=cnn_model, 
                                   cox=opt.cox, 
                                   lr=opt.lr)
+=======
+        #cnn_model = get_cnn_model(cnn_name=opt.cnn_name, model_depth=opt.model_depth, n_classes=n_classes, 
+        #                         in_channels=opt.in_channels)
+        onnxPath = '/mnt/kannlab_rfa/Zezhong/HeadNeck/encoder_nnUNet/models/ONNX_MODEL/nnTransferModel.onnx'
+        onnx_model = onnx.load(onnxPath)
+        cnn_model = convert(onnx_model)
+        cox_model = get_cox_model(task_dir=task_dir, cnn_model=cnn_model, cox=opt.cox, lr=opt.lr)
+>>>>>>> origin/main
 
     if opt.train:
         # load train data
